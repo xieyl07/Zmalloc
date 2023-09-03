@@ -88,7 +88,7 @@ inline PageInfo* Arena::splice_tree_page(int page_num) {
     PageInfo* page_i = *it;
     avail_pages.erase(it);
 
-    int unallocated_num = page_i->lu.page_num;
+    int unallocated_num = page_i->get_page_num_lu();
     if (page_num != unallocated_num) {
         deal_remaining_pages(page_i + page_num, unallocated_num - page_num);
     }
@@ -134,7 +134,8 @@ inline char* Arena::alloc_small(int size) {
 
 inline PageInfo* Arena::get_npage(int page_num) {
     deO("")
-    if (!avail_pages.empty() && page_num <= (*avail_pages.rbegin())->lu.page_num) {
+    if (!avail_pages.empty() &&
+        page_num <= (*avail_pages.rbegin())->get_page_num_lu()) {
         return splice_tree_page(page_num);
     } else {
         Chunk *chunk = get_nchunk(1);
@@ -175,12 +176,12 @@ void Arena::free(void* addr) {
     // 没法检查所属内存的 chunk 是否是已分配的 chunk?
 
     PageInfo *page_i = addr_to_page_i(addr);
-    if (!page_i->is_allocated) {
+    if (!page_i->is_allocated()) {
         // do something for incorrect addr
         return;
     }
 
-    if (page_i->is_large) {
+    if (page_i->is_large()) {
         free_large(page_i);
         return;
     }
@@ -211,14 +212,14 @@ inline void Arena::free_huge(void *addr, Chunk *chunk) {
 
 inline void Arena::free_large(PageInfo *page_i) {
     deO("")
-    fetch_npage(page_i, page_i->lu.page_num);
+    fetch_npage(page_i, page_i->get_page_num_lu());
 }
 
 inline void Arena::fetch_npage(PageInfo *page_i, int num) {
     deO("")
     init_unallocated(page_i, num);
     page_i = meld_unallocated_pages(page_i);
-    if (page_i->lu.page_num == CHUNK_PAGE_NUM - map_bias) {
+    if (page_i->get_page_num_lu() == CHUNK_PAGE_NUM - map_bias) {
         fetch_chunk(addr_to_chunk(page_i));
         return;
     }
@@ -231,34 +232,34 @@ inline PageInfo* Arena::meld_unallocated_pages(PageInfo *page_i_beg) {
     deO("")
     Chunk *chunk = addr_to_chunk(page_i_beg);
     int page_id = page_i_beg - chunk->pages_i;
-    PageInfo *page_i_end = page_i_beg + page_i_beg->lu.page_num - 1;
-    int page_num = page_i_beg->lu.page_num;
+    PageInfo *page_i_end = page_i_beg + page_i_beg->get_page_num_lu() - 1;
+    int page_num = page_i_beg->get_page_num_lu();
 
     if (page_id != 0) { // 尝试合并前面的 page
         PageInfo *prev_end = page_i_beg - 1;
-        if (!prev_end->is_allocated) { // ###多线程怎么办啊, 都要上锁?
-            int prev_num = prev_end->lu.page_num;
+        if (!prev_end->is_allocated()) { // ###多线程怎么办啊, 都要上锁?
+            int prev_num = prev_end->get_page_num_lu();
             page_i_beg = prev_end - prev_num + 1;
             page_lock.lock();
             avail_pages.erase(page_i_beg);
             page_lock.unlock();
             page_num += prev_num;
-            page_i_beg->lu.page_num = page_num;
-            page_i_end->lu.page_num = page_num;
+            page_i_beg->set_page_num_lu(page_num);
+            page_i_end->set_page_num_lu(page_num);
         }
     }
 
     if (page_id != CHUNK_PAGE_NUM - map_bias - 1) { // 尝试合并后面的 page
         PageInfo *next_beg = page_i_end + 1;
-        if (!next_beg->is_allocated) {
-            int next_num = next_beg->lu.page_num;
+        if (!next_beg->is_allocated()) {
+            int next_num = next_beg->get_page_num_lu();
             page_i_end = next_beg + next_num - 1;
             page_lock.lock();
             avail_pages.erase(page_i_end);
             page_lock.unlock();
             page_num += next_num;
-            page_i_beg->lu.page_num = page_num;
-            page_i_end->lu.page_num = page_num;
+            page_i_beg->set_page_num_lu(page_num);
+            page_i_end->set_page_num_lu(page_num);
         }
     }
 
