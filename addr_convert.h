@@ -15,7 +15,7 @@ inline Chunk* addr_to_chunk(void *addr) {
 /*******************************************************/
 
 inline PageInfo* page_i_to_run_page_i(PageInfo *page_i) {
-    return page_i - page_i->small.run_offset;
+    return page_i - page_i->get_run_offset_small();
 }
 
 inline PageInfo* run_i_to_run_page_i(char *run_info) {

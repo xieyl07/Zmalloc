@@ -63,8 +63,10 @@ class TCache : NoCopy {
     }
     // 总的入口
     void free(void *region) {
-        if (!addr_to_page_i(region)->is_large/* is small### */) {
-            arena->free(region);
+
+        if (!addr_to_page_i(region)->is_large()/* is small### */) {
+            Chunk *chunk = addr_to_chunk(region);
+            chunk->arena->free(region);
             return;
         }
         int bin_id = addr_to_run_i(region)->bin_id;

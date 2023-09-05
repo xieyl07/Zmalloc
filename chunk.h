@@ -33,15 +33,16 @@ struct sz_cmp { // 按大小排序的两个 chunk set
 template <typename T>
 struct sz_find {
     bool operator()(T *lhs, int rhs) const {
-        return lhs->num == rhs;
+        return lhs->num < rhs;
     }
 };
 
 extern sz_find<Chunk> chunk_sz_find; // 偷懒定义在arena.cc里
 
 static Chunk *alloc_chunk(int n) {
-    void *addr = aligned_alloc(CHUNK_SIZE, CHUNK_SIZE * n);
-    return (Chunk*)addr;
+    void *chunk = aligned_alloc(CHUNK_SIZE, CHUNK_SIZE * n);
+//    void *addr = malloc(CHUNK_SIZE * n);
+    return (Chunk*)chunk;
 }
 
 } // namespace

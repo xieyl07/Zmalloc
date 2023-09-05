@@ -1,4 +1,5 @@
 #pragma once
+#define r_no_d
 
 #include <cstdio>
 #include <cstdarg>
@@ -18,7 +19,7 @@ static void debug_print(const char *file_name, const char* func_name,
     fprintf(stderr, "}\n");
 }
 
-#ifndef release_no_debug
+#ifndef r_no_d
 #   define deO(format, ...) /* debug output */ \
         debug_print(__FILE_NAME__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__);
 #else

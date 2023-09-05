@@ -7,7 +7,6 @@ sz_find_p page_sz_find;
 int cpu_nthread = nthread_init();
 
 void* Arena::alloc(int size) {
-    deO("")
     if (size <= 0) {
         return nullptr;
     }
@@ -22,31 +21,27 @@ void* Arena::alloc(int size) {
 
 inline void* Arena::alloc_huge(int size) {
     deO("")
-    int chunk_num = size + CHUNK_SIZE + 1 + (map_bias << PAGE_SHIFT) & CHUNK_MASK;
+    int chunk_num = size + CHUNK_SIZE + 1 + (map_bias << PAGE_SHIFT) >> CHUNK_SHIFT;
 
     Chunk *chunk = get_nchunk(chunk_num);
     chunk->init(this, chunk_num);
 
-    return chunk + (map_bias << PAGE_SHIFT);
+    return a2c(chunk) + (map_bias << PAGE_SHIFT);
 }
 
 inline Chunk* Arena::get_nchunk(int num) {
     deO("")
-    chunk_lock.lock();
     if (spare && num == 1) {
         Chunk *chunk = spare;
         spare = nullptr;
-        chunk_lock.unlock();
         return chunk;
 
     } else if (!cached_chunks_sz.empty() &&
                num <= (*(cached_chunks_sz.rbegin()))->num) {
         Chunk *chunk = splice_tree_chunk(num);
-        chunk_lock.unlock();
         return chunk;
 
     } else {
-        chunk_lock.unlock();
         Chunk* chunk = alloc_chunk(num);
         all_chunks.insert(chunk, num);
         return chunk;
@@ -54,9 +49,13 @@ inline Chunk* Arena::get_nchunk(int num) {
 }
 
 // 确保的确能做到再调用
-inline Chunk* Arena::splice_tree_chunk(int num) {
+Chunk* Arena::splice_tree_chunk(int num) {
     deO("")
     auto it = lower_bound(cached_chunks_sz.begin(), cached_chunks_sz.end(), num, chunk_sz_find);
+    if (it == cached_chunks_sz.end()) {
+        deO("exit")
+        exit(1);
+    }
     Chunk* chunk = *it;
     cached_chunks_sz.erase(it);
     cached_chunks_addr.erase(cached_chunks_addr.find(chunk));
@@ -84,7 +83,12 @@ inline void* Arena::alloc_large(int size) {
 // 确保的确能做到再调用
 inline PageInfo* Arena::splice_tree_page(int page_num) {
     deO("")
-    auto it = lower_bound(avail_pages.begin(), avail_pages.end(), page_num, page_sz_find);
+    auto it = lower_bound(avail_pages.begin(), avail_pages.end(),
+                          page_num, page_sz_find);
+    if (it == avail_pages.end()) {
+        deO("")
+        exit(1);
+    }
     PageInfo* page_i = *it;
     avail_pages.erase(it);
 
@@ -98,9 +102,7 @@ inline PageInfo* Arena::splice_tree_page(int page_num) {
 inline void Arena::deal_remaining_pages(PageInfo *page_i, int page_num) {
     deO("")
     init_unallocated(page_i, page_num);
-    page_lock.lock();
     avail_pages.insert(page_i);
-    page_lock.unlock();
 }
 
 inline char* Arena::alloc_small(int size) {
@@ -108,7 +110,6 @@ inline char* Arena::alloc_small(int size) {
     // 分配后判空
     int bin_id = get_bin_id(size);
     Bin *bin = bins + bin_id;
-    bin->lock.lock();
     RunInfo *run_i = bin->cur_run;
     if (run_i) {
         if (run_i->nfree == 1) {
@@ -127,7 +128,6 @@ inline char* Arena::alloc_small(int size) {
         }
     }
     char *ret = run_i->get_region();
-    bin->lock.unlock();
 
     return ret;
 }
@@ -195,7 +195,7 @@ void Arena::free(void* addr) {
     // do something for incorrect addr
 }
 
-inline void Arena::free_huge(void *addr, Chunk *chunk) {
+void Arena::free_huge(void *addr, Chunk *chunk) {
     deO("")
     // ###过程是拿到 chunk 并从 chunks 中释放, 再调用这个, 所以这个函数不管 chunks
     Arena *a = chunk->arena;
@@ -204,10 +204,8 @@ inline void Arena::free_huge(void *addr, Chunk *chunk) {
         return;
     }
 
-    chunk_lock.lock();
     cached_chunks_sz.insert(chunk);
     cached_chunks_addr.insert(chunk);
-    chunk_lock.unlock();
 }
 
 inline void Arena::free_large(PageInfo *page_i) {
@@ -223,74 +221,74 @@ inline void Arena::fetch_npage(PageInfo *page_i, int num) {
         fetch_chunk(addr_to_chunk(page_i));
         return;
     }
-    page_lock.lock();
+    deO("%d", (*avail_pages.rbegin())->get_page_num_lu())
     avail_pages.insert(page_i);
-    page_lock.unlock();
 }
 
 inline PageInfo* Arena::meld_unallocated_pages(PageInfo *page_i_beg) {
     deO("")
     Chunk *chunk = addr_to_chunk(page_i_beg);
-    int page_id = page_i_beg - chunk->pages_i;
-    PageInfo *page_i_end = page_i_beg + page_i_beg->get_page_num_lu() - 1;
+    int page_id = page_i_to_page_id(page_i_beg, chunk);
     int page_num = page_i_beg->get_page_num_lu();
+    PageInfo *page_i_end = page_i_beg + page_num - 1;
 
-    if (page_id != 0) { // 尝试合并前面的 page
-        PageInfo *prev_end = page_i_beg - 1;
-        if (!prev_end->is_allocated()) { // ###多线程怎么办啊, 都要上锁?
-            int prev_num = prev_end->get_page_num_lu();
-            page_i_beg = prev_end - prev_num + 1;
-            page_lock.lock();
-            avail_pages.erase(page_i_beg);
-            page_lock.unlock();
-            page_num += prev_num;
-            page_i_beg->set_page_num_lu(page_num);
-            page_i_end->set_page_num_lu(page_num);
-        }
+    // 尝试合并前面的 page
+    if (page_id != 0 && !(page_i_beg - 1)->is_allocated()) {
+        deO("%p", &((page_i_beg - 1)->map))
+        deO("%u", (page_i_beg - 1)->map)
+        int prev_num = (page_i_beg - 1)->get_page_num_lu();
+        page_i_beg -= prev_num;
+        avail_pages.erase(page_i_beg);
+        page_num += prev_num;
+        page_i_beg->set_page_num_lu(page_num);
+        page_i_end->set_page_num_lu(page_num);
     }
 
-    if (page_id != CHUNK_PAGE_NUM - map_bias - 1) { // 尝试合并后面的 page
-        PageInfo *next_beg = page_i_end + 1;
-        if (!next_beg->is_allocated()) {
-            int next_num = next_beg->get_page_num_lu();
-            page_i_end = next_beg + next_num - 1;
-            page_lock.lock();
-            avail_pages.erase(page_i_end);
-            page_lock.unlock();
-            page_num += next_num;
-            page_i_beg->set_page_num_lu(page_num);
-            page_i_end->set_page_num_lu(page_num);
-        }
+    // 尝试合并后面的 page
+    if (page_id != CHUNK_PAGE_NUM - map_bias - 1 &&
+        !(page_i_end + 1)->is_allocated())
+    {
+        int next_num = (page_i_end + 1)->get_page_num_lu();
+        page_i_end += next_num;
+        avail_pages.erase(page_i_end);
+        page_num += next_num;
+        page_i_beg->set_page_num_lu(page_num);
+        page_i_end->set_page_num_lu(page_num);
     }
 
     return page_i_beg;
 }
 
-inline void Arena::fetch_chunk(Chunk *chunk) {
+void Arena::fetch_chunk(Chunk *chunk) {
     deO("")
-    chunk_lock.lock();
+    // spare 放入 RB Tree
     if (spare) {
-        auto prev_chunk_it = upper_bound(cached_chunks_addr.begin(),
-                                         cached_chunks_addr.end(),
-                                         spare, greater<Chunk*>());
-        auto next_chunk_it = upper_bound(cached_chunks_addr.begin(),
-                                         cached_chunks_addr.end(), spare);
-        if (chunk - *prev_chunk_it == (*prev_chunk_it)->num) {
-            spare = *prev_chunk_it;
-            spare->num += 1;
-            cached_chunks_addr.erase(prev_chunk_it);
-            cached_chunks_sz.erase(prev_chunk_it);
-        }
-        if (*next_chunk_it - chunk == spare->num) {
-            spare->num += (*next_chunk_it)->num;
-            cached_chunks_addr.erase(next_chunk_it);
-            cached_chunks_sz.erase(next_chunk_it);
+        if (!cached_chunks_addr.empty()) {
+
+            auto next_it = upper_bound(cached_chunks_addr.begin(),
+                                       cached_chunks_addr.end(), spare);
+            if (next_it != cached_chunks_addr.begin()) {
+                auto prev_it = --next_it;
+                if (chunk - *prev_it == (*prev_it)->num) {
+                    spare = *prev_it;
+                    spare->num += 1;
+                    cached_chunks_addr.erase(prev_it);
+                    cached_chunks_sz.erase(prev_it);
+                }
+            }
+
+            if (next_it != cached_chunks_addr.end()) {
+                if (*next_it - chunk == spare->num) {
+                    spare->num += (*next_it)->num;
+                    cached_chunks_addr.erase(next_it);
+                    cached_chunks_sz.erase(next_it);
+                }
+            }
         }
         cached_chunks_sz.insert(spare);
         cached_chunks_addr.insert(spare);
     }
     spare = chunk;
-    chunk_lock.unlock();
 }
 
 inline void Arena::free_small(char *addr, PageInfo *page_i) {
@@ -306,17 +304,14 @@ inline void Arena::free_small(char *addr, PageInfo *page_i) {
         fetch_npage(run_page_i, bin_i->page_num);
     } else if (run_i.nfree == 1) {
         Bin &bin = bins[run_i.bin_id];
-        bin.lock.lock();
         if (!bin.cur_run) {
             bin.cur_run = &run_i;
         } else {
             bin.nonfull_runs.push(&run_i);
         }
-        bin.lock.unlock();
     }
 }
 
-static Arena ar1;
-PairingHeap<Arena*, arena_cmp> arenas(&ar1);
+PairingHeap<Arena*, arena_cmp> arenas{new Arena};
 
 } // namespace

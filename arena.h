@@ -25,7 +25,7 @@ class {
         lock.lock();
         for (int i = 0; i < num; ++i) {
             chunks.insert(chunk);
-            ++chunk;
+            chunk = (Chunk*)(a2c(chunk) + CHUNK_SIZE);
         }
         lock.unlock();
     }

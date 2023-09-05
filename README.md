@@ -1,4 +1,9 @@
+# allocator
+
+一个支持多线程的内存池, 借鉴了 jemalloc. 采用 bit map 减小分配器自身空间占用.
+
 ### 名词解释:
+`run`: 即`slab`
 `binind`: 这个 page 对应的 run 是 bins 里的第几个, 也就确定了一块 region 大小. 有必要?  
 `page_id`: 是第几个 **存数据的** page  
 `run_id`: run page_id  
@@ -45,3 +50,9 @@ region_size: 10240, page_num:10, region_num:4
 region_size: 12288, page_num:12, region_num:4
 region_size: 14336, page_num:14, region_num:4
 ```
+
+### 调试技术
+`CLion`可以方便的查看对象结构和内存(`x/8b 0x77777770000`)  
+`gdb`可以方便的断点, `b arena.cc:207 if (chunk < 0x100)`, `watch *(unsigned*)0x77777770000`  
+`gdb`的`p`可以执行函数, 非常好用  
+printf "%p" chunk + 

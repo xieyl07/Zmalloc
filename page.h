@@ -66,7 +66,8 @@ struct PageInfo : NoCopy {
         set_large_flag(false);
         set_run_offset_small(run_offset);
     }
-    void init_unallocated_head_tail(int page_num) {
+    // unallocated 初始化两端
+    void init_unallocated_ends(int page_num) {
         set_allocated_flag(false);
         set_page_num_lu(page_num);
     }
@@ -81,8 +82,8 @@ struct PageInfo : NoCopy {
 };
 
 static void init_unallocated(PageInfo *begin_page_i, int page_num) {
-    begin_page_i->init_unallocated_head_tail(page_num);
-    (begin_page_i + page_num - 1)->init_unallocated_head_tail(page_num);
+    begin_page_i->init_unallocated_ends(page_num);
+    (begin_page_i + page_num - 1)->init_unallocated_ends(page_num);
 }
 
 static void init_small(PageInfo *begin_page_i, int page_num, int bin_id) {
@@ -106,7 +107,7 @@ struct page_sz_cmp {
 
 struct sz_find_p {
     bool operator()(PageInfo *lhs, int rhs) const {
-        return lhs->get_page_num_lu() == rhs;
+        return lhs->get_page_num_lu() < rhs;
     }
 };
 
