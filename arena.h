@@ -347,8 +347,10 @@ void Arena::free_huge(Chunk *chunk) {
 // 大的函数, 合并也放在里面了
 void Arena::fetch_chunk(Chunk *chunk) {
     deO("")
-    // spare 放入 RB Tree
-    if (spare) {
+
+    chunk_lock.lock();
+
+    if (spare) { // spare 放入 RB Tree
         if (!cached_chunks_addr.empty()) {
             int spare_num = spare->pages_i[0].get_num_luc();
             auto next_it = upper_bound(cached_chunks_addr.begin(),
@@ -381,6 +383,8 @@ void Arena::fetch_chunk(Chunk *chunk) {
 
     // 插入 chunk 就是这么简单
     spare = chunk;
+
+    chunk_lock.unlock();
 }
 
 void Arena::free_large(PageInfo *page_i) {
@@ -390,15 +394,18 @@ void Arena::free_large(PageInfo *page_i) {
 
 void Arena::fetch_npage(PageInfo *page_i, int page_num) {
 //    inO("page_i: %p, page_num: %d", page_i, page_num)
+    page_lock.lock();
     // 引用传值!
     meld_unallocated_pages(page_i, page_num);
 //    inO("page_i: %p, page_num: %d", page_i, page_num)
     if (page_num == CHUNK_PAGE_NUM - map_bias) {
+        page_lock.unlock();
         Chunk *chunk = addr_to_chunk(page_i);
         chunk->init2(1); // 因为和small的长度信息是用的同一个, 会覆盖的!
         fetch_chunk(chunk);
     } else {
         avail_pages.insert(page_i);
+        page_lock.unlock();
     }
 }
 
@@ -455,24 +462,30 @@ void Arena::free_small(char *addr, PageInfo *page_i) {
     int region_id = (addr - run) / bin_i->region_size;
     assert(region_id < 512);
     run_i.fetch_region_id(region_id);
+
+    // run 的所有操作都要上 bin 的锁
+    Bin &bin = bins[run_i.bin_id];
+    bin.lock.lock();
     ++run_i.nfree;
     if (run_i.nfree == bin_i->region_num) {
         // 归还前先从树上删了!
-        Bin &bin = bins[run_i.bin_id];
         if (bin.cur_run == &run_i) {
             bin.cur_run = nullptr;
         } else {
             int ret = bin.nonfull_runs.erase(&run_i);
             assert(ret == 1);
         }
+        bin.lock.unlock();
         fetch_npage(run_page_i, bin_i->page_num);
     } else if (run_i.nfree == 1) {
-        Bin &bin = bins[run_i.bin_id];
         if (!bin.cur_run) {
             bin.cur_run = &run_i;
         } else {
             bin.nonfull_runs.insert(&run_i);
         }
+        bin.lock.unlock();
+    } else {
+        bin.lock.unlock();
     }
 }
 

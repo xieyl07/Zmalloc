@@ -25,31 +25,48 @@ struct BinInfo : NoCopy {
 
 extern BinInfo* bin_info; // 偷懒放到 run.cpp 里调用bin_info_init初始化他
 
+extern char size_class[]; // 偷懒放到 run.cpp
+
 // small 才用 bin
 inline int get_bin_id(int size) {
     int bin_id = -1;
-    if (size <= 8) {
-        bin_id = 0;
-    } else if (size <= 128) {
-        bin_id = (size + 16 - 1) / 16;
-    } else if (size <= 256) {
-        bin_id = (size + 32 - 1) / 32 + 4;
-    } else if (size <= 512) {
-        bin_id = (size + 64 - 1) / 64 + 8;
+//    if (size <= 8) {
+//        bin_id = 0;
+//    } else if (size <= 128) {
+//        bin_id = (size + 16 - 1) / 16;
+//    } else if (size <= 256) {
+//        bin_id = (size + 32 - 1) / 32 + 4;
+//    } else if (size <= 512) {
+//        bin_id = (size + 64 - 1) / 64 + 8;
+//    } else if (size <= 1024) {
+//        bin_id = (size + 128 - 1) / 128 + 12;
+//    } else if (size <= 2048) {
+//        bin_id = (size + 256 - 1) / 256 + 16;
+//    } else if (size <= 4096) {
+//        bin_id = (size + 512 - 1) / 512 + 20;
+//    } else if (size <= 8 KiB) {
+//        bin_id = (size + 1 KiB - 1) / (1 KiB) + 24; // 括号! 不然成了 / 1 * 1024
+//    } else if (size <= SMALL_SIZE_MAX) {
+//        bin_id = (size + 2 KB -1) / (2 KB) + 28;
+//    } else {
+//        assert(false);
+//        exit(1);
+//    }
+    if (size <= 512) {
+        bin_id = size_class[size];
     } else if (size <= 1024) {
         bin_id = (size + 128 - 1) / 128 + 12;
     } else if (size <= 2048) {
         bin_id = (size + 256 - 1) / 256 + 16;
     } else if (size <= 4096) {
         bin_id = (size + 512 - 1) / 512 + 20;
-    } else if (size <= 8 KiB) {
-        bin_id = (size + 1 KiB - 1) / (1 KiB) + 24; // 括号! 不然成了 / 1 * 1024
     } else if (size <= SMALL_SIZE_MAX) {
-        bin_id = (size + 2 KB -1) / (2 KB) + 28;
+        bin_id = (size + 1 KiB - 1) / (1 KiB) + 24; // 括号! 不然成了 / 1 * 1024
     } else {
         assert(false);
         exit(1);
     }
+
     return bin_id;
 }
 

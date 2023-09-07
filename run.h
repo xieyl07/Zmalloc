@@ -24,6 +24,7 @@ class RunInfo : NoCopy {
     }
 
  private:
+    int idx; // next fit
     int find_region_id();
     // 查看状况
     int get_region_id(int region_id) {

@@ -7,15 +7,16 @@
 
 namespace myAlloc {
 
-void* myalloc(int size) {
+void* myalloc(size_t size) {
 //    inO("%d", size)
-    if (size <= 0) {
+    if (size == 0) {
         return nullptr;
     }
+    assert(size < 100 MB);
 
     void *ret = tcache.alloc(size);
-    // ###for test, 跳过 tcache. 记得把tcache 的构造函数里的预分配和析构函数注释掉,
-    // ###加上 #define private public
+    // for test, 跳过 tcache. 记得把tcache 的构造函数里的预分配和析构函数注释掉,
+    // 加上 #define private public
     //    void *ret = tcache.arena->alloc(size);
     return ret;
 }
@@ -32,7 +33,7 @@ void myfree(void *ptr) {
         break;
     case SMALL_TYPE:
         tcache.free(ptr, page_i);
-//    chunk->arena->free_small(ptr, page_i); // ###for test, 跳过 tcache
+//    chunk->arena->free_small(ptr, page_i); // for test, 跳过 tcache
         break;
     case UNALLOCATED_TYPE:
     default:

@@ -9,8 +9,10 @@ namespace myAlloc {
 extern const int map_bias; // 定义在 run.cc 里了
 
 // 要么 inline 要么 static
-// 为了看看哪些函数影响大, 把 inline 去掉. 记得注释掉###
+// 为了看看哪些函数影响大, 把 inline 去掉. 跑分时候记得注释掉
+#ifdef inline_expand_M
 #define inline static
+#endif
 
 inline Chunk* addr_to_chunk(void *addr) {
     return (Chunk*)((p_t)addr & CHUNK_MASK);
@@ -70,6 +72,8 @@ inline RunInfo* addr_to_run_i(void *addr) {
     return &page_i_to_run_page_i(page_i)->small.run_i;
 }
 
+#ifdef inline_expand_M
 #undef inline
+#endif
 
 } // namespace

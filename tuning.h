@@ -30,13 +30,14 @@ constexpr p_t PAGE_MASK = ~(PAGE_SIZE - 1); // SIZE 是 int 所以可以赋值�
 constexpr p_t CHUNK_MASK = ~(CHUNK_SIZE - 1); // 别搞成 int 了! 要和 8 字节地址操作的
 constexpr int small_size[] = {8, // lu 和 huge 的档位有什么用?
                               16, 32, 48, 64, 80, 96, 112, 128,
-                              160, 192, 224, 256,
-                              320, 384, 448, 512,
-                              640, 768, 896, 1024,
+                              160, 192, 224, 256, /* 改 small size 的大小, */
+                              320, 384, 448, 512, /* 只要改 small__size数组 */
+                              640, 768, 896, 1024, /* 和 get_bin_id 就好了 */
                               1280, 1536, 1792, 2048,
                               2560, 3072, 3584, 4096,
-                              5 KB, 6 KB, 7 KB, 8 KB,
+                              5 KB, 6 KB, 7 KB, /*8 KB,
                               10 KB, 12 KB, 14 KB
+                              */
 };
 constexpr int NBINS = sizeof(small_size) / sizeof(int); // 只有 small 去 bin?
 constexpr int MIN_REGION_NUM = 4;

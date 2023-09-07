@@ -1,12 +1,11 @@
 # allocator
 
-一个支持多线程的内存池, 借鉴了 jemalloc. 采用 bit map 减小分配器自身空间占用.
+一个支持多线程的内存池, 设计参考了 jemalloc.  
+将内存分为不同大小来减小内部碎片和锁的粒度, 每一个大小级别都有相应的缓存, 对于小块内存采用`slab`和`bitmap`增加空间利用率, 提高性能. 能在常数时间内获取对应内存的管理单元.  
+使用内存着色防止cache line颠簸.  
+自动合并空闲块, 减小内存碎片.  
+使用`tcache`绑定`arena`的方法提高多线程性能, 能动态调整`tcache`中缓存块容量, 减小不必要的内存占用. 并且能正确处理由不同线程释放带来的问题.  
 
-### 名词解释:
-`run`: 即`slab`
-`binind`: 这个 page 对应的 run 是 bins 里的第几个, 也就确定了一块 region 大小. 有必要?  
-`page_id`: 是第几个 **存数据的** page  
-`run_id`: run page_id  
 
 三个容器: `arena`, `bin`, `tcache`.  
 三种容量: `chunk`, `page`, `region`.  
@@ -65,3 +64,7 @@ printf "%p" chunk +
 为了测试内存泄漏情况, 可以取消注释~TCache 里的 delete. 
 
 内存泄漏和越界访问问题检测可以用`valgrind`, 可以编译时加上`-fsanitize=address`. #define memory_leaks_detecet就可以进行内存泄漏的测试
+
+使用了 ffs, 又尝试了 next fit 替代 first fit. u_int64_t 替代 u_int32_t, bitset 替代 字节. 把 git_bin_id 写成表.
+
+用靠谱的随机数据, 随机分配大小, 随机的顺序释放一部分. 自己的还比不上 malloc(另外malloc来的要memset, 不然结果不真实, 自己的函数跑了四五十秒, 他的零点几)

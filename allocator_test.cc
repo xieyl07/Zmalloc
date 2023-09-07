@@ -8,10 +8,13 @@
 
 using namespace std;
 
+int inner_loop = 10000;
+int outer_loop = 10000;
+
 void std_time_test() {
-    for (int j = 0; j < 100000; ++j) {
+    for (int j = 0; j < outer_loop; ++j) {
         vector<int> v;
-        for (int i = 0; i < 1000; ++i) {
+        for (int i = 0; i < inner_loop; ++i) {
             v.push_back(0);
         }
         while (!v.empty()) v.pop_back();
@@ -19,9 +22,9 @@ void std_time_test() {
 }
 
 void myalloc_time_test() {
-    for (int j = 0; j < 100000; ++j) {
+    for (int j = 0; j < outer_loop; ++j) {
         vector<int, myAlloc::Allocator<int>> v;
-        for (int i = 0; i < 1000; ++i) {
+        for (int i = 0; i < inner_loop; ++i) {
             v.push_back(0);
         }
         while (!v.empty()) v.pop_back();
@@ -29,9 +32,9 @@ void myalloc_time_test() {
 }
 
 void malloc_time_test() {
-    for (int j = 0; j < 100000; ++j) {
+    for (int j = 0; j < outer_loop; ++j) {
     vector<int, myAlloc::AllocatorWARP<int>> v;
-        for (int i = 0; i < 1000; ++i) {
+        for (int i = 0; i < inner_loop; ++i) {
             v.push_back(0);
         }
         while (!v.empty()) v.pop_back();

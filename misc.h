@@ -26,8 +26,10 @@ inline char* a2c(T p) {
 }
 
 // 要么 inline 要么 static
-// 为了看看哪些函数影响大, 把 inline 去掉. 记得注释掉###
+// 为了看看哪些函数影响大, 把 inline 去掉. 跑分时候记得注释掉
+#ifdef inline_expand_M
 #define inline static
+#endif
 
 // 最大公因数
 inline int gcd(int a, int b) {
@@ -83,6 +85,8 @@ inline int get_random(int limit) {
     return rand() % (limit + 1);
 }
 
+#ifdef inline_expand_M
 #undef inline
+#endif
 
 } // namespace
