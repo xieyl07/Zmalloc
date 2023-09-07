@@ -8,40 +8,40 @@
 
 namespace myAlloc {
 
-// 每次分配了 chunk 就 new 一个放到 map 里去
 struct Chunk : NoCopy {
     Arena *arena;
-    int num; // chunk number, 只有huge > 1
 
     PageInfo pages_i[1];
     // other PageInfo, and pages
 
-    void init(Arena *a, int page_num) {
+    void init(int chunk_num, Arena *a) {
         arena = a;
-        num = page_num;
+        pages_i[0].init_chunks_head(chunk_num);
+    }
+    void init2(int chunk_num) {
+        pages_i[0].init_chunks_head(chunk_num);
     }
 };
 
-template <typename T>
-struct sz_cmp { // 按大小排序的两个 chunk set
+struct chunk_sz_cmp { // 按大小排序的两个 chunk set
     // const 一定要! 不然 set 不能插入了
-    bool operator()(const T *lhs, const T *rhs) const {
-        return lhs->num < rhs->num || lhs < rhs;
+    bool operator()(const Chunk *lhs, const Chunk *rhs) const {
+        return lhs->pages_i[0].get_num_luc() < rhs->pages_i[0].get_num_luc() ||
+               lhs->pages_i[0].get_num_luc() == rhs->pages_i[0].get_num_luc() && lhs < rhs;
     }
 };
 
-template <typename T>
-struct sz_find {
-    bool operator()(T *lhs, int rhs) const {
-        return lhs->num < rhs;
+struct sz_find_c {
+    bool operator()(Chunk *lhs, int rhs) const {
+        return lhs->pages_i[0].get_num_luc() < rhs;
     }
 };
 
-extern sz_find<Chunk> chunk_sz_find; // 偷懒定义在arena.cc里
+extern sz_find_c chunk_sz_find; // 偷懒定义在 arena.h 里
 
-static Chunk *alloc_chunk(int n) {
+inline Chunk *alloc_chunk(int n) {
+    assert(n > 0);
     void *chunk = aligned_alloc(CHUNK_SIZE, CHUNK_SIZE * n);
-//    void *addr = malloc(CHUNK_SIZE * n);
     return (Chunk*)chunk;
 }
 

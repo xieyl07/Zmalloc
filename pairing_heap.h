@@ -23,9 +23,11 @@ class PairingHeap {
     ~PairingHeap() {
         del_tree(root);
     }
-    void push(T val) {
+    Node* push(T val) {
         ++sz;
-        root = merge_2_node(root, new Node(val));
+        Node *node = new Node(val);
+        root = merge_2_node(root, node);
+        return node;
     }
     // 调用前必须检查 !empty()
     T top() const {
@@ -44,6 +46,12 @@ class PairingHeap {
     [[nodiscard]] bool empty() const {
         return sz == 0;
     }
+//    void mod(Node *node, int new_val) {
+//        assert(cmp(new_val, node->val));
+//
+//        node->bro // 从树中删除, 可是没有父节点没有兄弟节点怎么删啊
+//        merge_2_node(root, node);
+//    }
     void clear() {
         del_tree();
         root = nullptr;

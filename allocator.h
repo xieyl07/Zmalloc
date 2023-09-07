@@ -24,7 +24,7 @@ class Allocator {
     template <typename U>
     Allocator(const Allocator<U>&) noexcept {}
 
-    // Allocate memory for n objects of type T
+    // Allocate memory for N objects of type T
     T* allocate(std::size_t n) {
         if (n > std::numeric_limits<size_type>::max() / sizeof(T))
             throw std::bad_alloc();
@@ -45,6 +45,50 @@ bool operator==(const Allocator<T1>&, const Allocator<T2>&) noexcept {
 
 template <typename T1, typename T2>
 bool operator!=(const Allocator<T1>&, const Allocator<T2>&) noexcept {
+    return false;
+}
+
+// 包装 malloc 的 allocator
+template <typename T>
+class AllocatorWARP {
+ public:
+    // Define the necessary types for an allocator
+    using value_type = T;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = T&;
+    using const_reference = const T&;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+
+    // Constructor
+    AllocatorWARP() noexcept = default;
+
+    // Convert an allocator of type U to an allocator of type T
+    template <typename U>
+    AllocatorWARP(const AllocatorWARP<U>&) noexcept {}
+
+    // Allocate memory for N objects of type T
+    T* allocate(std::size_t n) {
+        if (n > std::numeric_limits<size_type>::max() / sizeof(T))
+            throw std::bad_alloc();
+        return static_cast<T*>(malloc(n * sizeof(T)));
+    }
+
+    // Deallocate memory
+    void deallocate(T* p, std::size_t) noexcept {
+        free(p);
+    }
+};
+
+// Comparing two AllocatorWARP objects for equality
+template <typename T1, typename T2>
+bool operator==(const AllocatorWARP<T1>&, const AllocatorWARP<T2>&) noexcept {
+    return true;
+}
+
+template <typename T1, typename T2>
+bool operator!=(const AllocatorWARP<T1>&, const AllocatorWARP<T2>&) noexcept {
     return false;
 }
 
