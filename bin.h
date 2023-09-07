@@ -5,6 +5,7 @@
 #include "pairing_heap.h"
 #include "lock.h"
 #include "forward_declartion.h"
+#include <set>
 
 namespace myAlloc {
 
@@ -12,8 +13,8 @@ struct Bin : NoCopy {
     RunInfo *cur_run;
     // non-full free runs, 按 RunInfo 的地址排序,
     // RunInfo 在 PageInfo 里面, 也就是按照起始 page 的地址排序
-    PairingHeap<RunInfo*> nonfull_runs;
-    Mutex lock;
+    set<RunInfo*> nonfull_runs;
+    SpinLock lock;
 };
 
 struct BinInfo : NoCopy {
@@ -46,7 +47,8 @@ inline int get_bin_id(int size) {
     } else if (size <= SMALL_SIZE_MAX) {
         bin_id = (size + 2 KB -1) / (2 KB) + 28;
     } else {
-        deO("never get here!");
+        assert(false);
+        exit(1);
     }
     return bin_id;
 }

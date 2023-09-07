@@ -1,3 +1,4 @@
+#include <cassert>
 #include "run.h"
 #include "page.h"
 #include "addr_convert.h"
@@ -5,7 +6,7 @@
 
 namespace myAlloc {
 
-static BinInfo* bin_info_init() {
+static inline BinInfo* bin_info_init() {
     auto bin_i = new BinInfo[NBINS];
     for (int i = 0; i < NBINS; ++i) {
         int region_size = bin_i[i].region_size = small_size[i];
@@ -28,7 +29,7 @@ static constexpr unsigned map_bias_init() {
     // 刚开始map_bias偏小, 第一个 loop 后 bias 偏大,
     // 再偏小, 偏大, 最后大于等于实际占用, 挺好的
     for (int i = 0; i < 3; ++i) {
-        int head_size = sizeof(Arena*) + sizeof(int) + (CHUNK_PAGE_NUM - bias) * sizeof(PageInfo);
+        int head_size = offsetof(Chunk, pages_i) + (CHUNK_PAGE_NUM - bias) * sizeof(PageInfo);
         bias = (head_size + PAGE_SIZE - 1) / PAGE_SIZE;
     }
     return bias;
@@ -36,51 +37,32 @@ static constexpr unsigned map_bias_init() {
 
 constexpr int map_bias = map_bias_init();
 
-// free 来 后 对对应的管理单元 init
 void RunInfo::init(int b_id) {
     bin_id = b_id;
     nfree = bin_info[bin_id].region_num;
-    memset(alloc_map, 0, BITMAP_GROUPS_MAX * sizeof(bitmap_t));
+    bitmap.set();
 }
 
-int RunInfo::find_region_id_set() {
-    // ###检查了 nfree, 看看逻辑, 调用的地方是不是要检查返回值
+int RunInfo::find_region_id() {
     if (nfree < 1) {
-        deO("")
-        return -1;
+        assert(false);
     }
 
     BinInfo * bin_i = bin_info + bin_id;
-    int group_num = bin_i->region_num / BITS_NUM;
-    int spare_bits = bin_i->region_num % BITS_NUM;
-    bitmap_t map;
-
-    for (int i = 0; i < group_num; ++i) {
-        map = alloc_map[i];
-        if (map != BITMAP_MAX) {
-            int idx = find_first_zero(map);
-            set_bit(alloc_map[i], idx);
-            return BITS_NUM * i + idx;
+    for (int i = 0; i < bin_i->region_num; ++i) {
+        if (bitmap[i] == 1) {
+            return i;
         }
     }
 
-    if (spare_bits != 0 &&
-        (map = alloc_map[group_num]) != (1U << (spare_bits + 1)) - 1)
-    {
-        int idx = find_first_zero(map);
-        set_bit(alloc_map[group_num], idx);
-        return BITS_NUM * group_num + idx;
-    }
-
-    return -1;
+    // nfree > 0, 但是没找到
+    assert(false);
 }
 
 char* RunInfo::get_region() {
-    int region_id = find_region_id_set();
-    if (region_id == -1) {
-        deO("region_id == -1, exit")
-        exit(1);
-    }
+    int region_id = find_region_id();
+    take_region_id(region_id);
+
     --nfree;
 
     PageInfo *page_i = run_i_to_run_page_i(a2c(this));
@@ -91,7 +73,9 @@ char* RunInfo::get_region() {
     return run + bin_i->region_size * region_id;
 }
 
-bool RunInfo::is_alloced_region(char *addr) {
+bool RunInfo::is_allocated_region(char *addr) {
+    // ###比较费性能, 算了不用了
+    return true;
     // 默认 this 真的是 small 的第一个 page 的 RunInfo
     char *run_page = run_i_to_page_small(a2c(this));
     if(addr < run_page || addr >= run_page + PAGE_SIZE) {
@@ -112,24 +96,6 @@ bool RunInfo::is_alloced_region(char *addr) {
         return false;
     }
     return true;
-}
-
-int RunInfo::get_region_id(int region_id) {
-    bitmap_t map = alloc_map[region_id / BITS_NUM];
-    int shift = region_id % BITS_NUM;
-    return get_bit(map, shift);
-}
-
-void RunInfo::set_region_id(int region_id) {
-    bitmap_t &map = alloc_map[region_id / BITS_NUM];
-    int shift = region_id % BITS_NUM;
-    set_bit(map, shift);
-}
-
-void RunInfo::unset_region_id(int region_id) {
-    bitmap_t &map = alloc_map[region_id / BITS_NUM];
-    int shift = region_id % BITS_NUM;
-    unset_bit(map, shift);
 }
 
 }

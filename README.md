@@ -53,6 +53,15 @@ region_size: 14336, page_num:14, region_num:4
 
 ### 调试技术
 `CLion`可以方便的查看对象结构和内存(`x/8b 0x77777770000`)  
-`gdb`可以方便的断点, `b arena.cc:207 if (chunk < 0x100)`, `watch *(unsigned*)0x77777770000`  
+`gdb`可以方便的断点, `b arena.cc:207 if (chunk < 0x100)`, `watch *0x77777770000`(默认4字节内容), `watch`非常好用, `watch ((Arena*)0x5555555802b0)->bins[20].cur_run == 0x7ffff6c10020`(类成员就要把类地址写上不然gdb不认识), 可以看出越界访问, 忘记从cur_run中移除等等被意料之外的人写入的问题  
 `gdb`的`p`可以执行函数, 非常好用  
-printf "%p" chunk + 
+printf "%p" chunk +  
+不能后退, 就打日志吧  
+`display avail_pages.empty() ? "empty" : (*avail_pages.begin())`
+
+### 性能优化
+最初写完的时候性能还比不上malloc. 用`perf record ./a.out`, `perf report`分析性能, 把几个对性能影响大的函数进行优化. 和想象的不同, 向系统分配内存上的速度不是问题, 但是在 run 的 bitmap 非常影响性能, 先用 `ffs` 代替自己的循环, 再用 `std::bitset`, 性能有了明显提升.
+
+为了测试内存泄漏情况, 可以取消注释~TCache 里的 delete. 
+
+内存泄漏和越界访问问题检测可以用`valgrind`, 可以编译时加上`-fsanitize=address`. #define memory_leaks_detecet就可以进行内存泄漏的测试

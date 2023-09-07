@@ -6,7 +6,11 @@
 namespace myAlloc {
 
 // 头部占用的 page 数量
-extern const int map_bias; // 定义在 run 里了
+extern const int map_bias; // 定义在 run.cc 里了
+
+// 要么 inline 要么 static
+// 为了看看哪些函数影响大, 把 inline 去掉. 记得注释掉###
+#define inline static
 
 inline Chunk* addr_to_chunk(void *addr) {
     return (Chunk*)((p_t)addr & CHUNK_MASK);
@@ -15,7 +19,7 @@ inline Chunk* addr_to_chunk(void *addr) {
 /*******************************************************/
 
 inline PageInfo* page_i_to_run_page_i(PageInfo *page_i) {
-    return page_i - page_i->get_run_offset_small();
+    return page_i - page_i->get_run_offset_s();
 }
 
 inline PageInfo* run_i_to_run_page_i(char *run_info) {
@@ -65,5 +69,7 @@ inline RunInfo* addr_to_run_i(void *addr) {
     PageInfo *page_i = addr_to_page_i(addr);
     return &page_i_to_run_page_i(page_i)->small.run_i;
 }
+
+#undef inline
 
 } // namespace
