@@ -5,6 +5,8 @@
 #include "debug.h"
 #include "tuning.h"
 
+//#define use_next_fit
+
 namespace myAlloc {
 
 class RunInfo : NoCopy {
@@ -24,7 +26,9 @@ class RunInfo : NoCopy {
     }
 
  private:
-    int idx; // next fit
+#ifdef use_next_fit
+    int idx = -1; // next fit
+#endif
     int find_region_id();
     // 查看状况
     int get_region_id(int region_id) {

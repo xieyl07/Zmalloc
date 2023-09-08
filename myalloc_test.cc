@@ -6,55 +6,111 @@
 #include <functional>
 #include <cstring>
 #include "myalloc.h"
-#include "mempool_example.h"
 
 using namespace std;
 
-int thread_num = 2;
-int inner_loop = 10000;
-int outer_loop = 10000;
+enum release_type{FULL, RANDOM};
+enum size_type{FIX_SMALL, FIX_MID, FIX_LARGE, RAN_SMALL, RAN_MID};
 
+// 要调的
+constexpr int thread_num = 1000;
+constexpr int inner_loop = 1000;
+constexpr int outer_loop = 100;
+constexpr size_type size_switch = RAN_MID;
+constexpr bool enable_memset = true;
+constexpr release_type release_type_switch = RANDOM;
+// #define use_next_fit 在 run.h里
+
+
+constexpr int ran_array_size = 1024 * 1024 * 8;
+
+// 不让生成随机数成为性能影响最大的地方. 不然看不出各个分配器之间的区别
 u_int16_t *get_random_array() {
-    int limit = 10000 * 10000 * 1;
-    u_int16_t *ret = new u_int16_t[limit];
-    for (int i = 0; i < limit; ++i) {
+    u_int16_t *ret = new u_int16_t[ran_array_size];
+    for (int i = 0; i < ran_array_size; ++i) {
         ret[i] = random();
     }
     return ret;
 }
 
 const u_int16_t *ran_a = get_random_array();
+double *durations = new double[thread_num];
 
-void thread_func(void *v[], void*(*alloc_f)(size_t), void(*free_f)(void*)) {
+void thread_func(void *v[], int tid, void*(*alloc_f)(size_t), void(*free_f)(void*)) {
+
+    timeval start, end;
+    long seconds, microseconds;
+    double duration;
     int cnt = 0;
+    int sz;
+
+    gettimeofday(&start, nullptr);
+
     for (int i = 0; i < outer_loop; ++i) {
         for (int j = 0; j < inner_loop; ++j) {
-//            int sz = (ran_a[cnt++] % 1024 + 1) * 256; // 小部分 small 和 large, KB级
-            int sz = ran_a[cnt++] % 1024 + 1; // 别忘 +1
+            switch (size_switch) {
+            case FIX_SMALL:
+                sz = 64;
+                break;
+            case FIX_MID:
+            {
+                sz = 1700;
+                break;
+            }
+            case FIX_LARGE:
+            {
+                sz = 64 * 1024;
+                break;
+            }
+            case RAN_SMALL:
+            {
+                sz = ran_a[cnt] % 1024 + 1; // 别忘 +1
+                cnt = (cnt + 1) % ran_array_size;
+                break;
+            }
+            case RAN_MID:
+            {
+                sz = (ran_a[cnt] % 1024 + 1) * 256; // [256, 256KB] 小部分 small 和 large
+                cnt = (cnt + 1) % ran_array_size;
+                break;
+            }
+            } // switch
             v[j] = alloc_f(sz);
-            memset(v[j], 0, sz);
+            if (enable_memset && i == 1) memset(v[j], 0xff, sz);
         }
 
-        for (int j = 0; j < inner_loop; ++j) {
-            free_f(v[j]);
+        switch (release_type_switch) {
+        case FULL:
+        {
+            for (int j = 0; j < inner_loop; ++j) {
+                free_f(v[j]);
+            }
+            break;
         }
-
-//        for (int j = 0; j < inner_loop; ++j) {
-//            int k = ran_a[cnt++] % inner_loop;
-//            if (v[k]) {
-//                free_f(v[k]);
-//                v[k] = nullptr;
-//            }
-//        }
+        case RANDOM:
+        {
+            for (int j = 0; j < inner_loop; ++j) {
+                int k = ran_a[cnt] % inner_loop;
+                cnt = (cnt + 1) % ran_array_size;
+                if (v[k]) {
+                    free_f(v[k]);
+                    v[k] = nullptr;
+                }
+            }
+            break;
+        }
+        } // switch (release_type_switch)
     }
+
+    gettimeofday(&end, nullptr);
+    seconds = end.tv_sec - start.tv_sec;
+    microseconds = end.tv_usec - start.tv_usec;
+    durations[tid] = seconds + microseconds / 1000000.0;
 }
 
 void test(int type) {
     thread t[thread_num];
     void *v[thread_num][inner_loop];
-    struct timeval start, end;
-    long seconds, microseconds;
-    double duration;
 
     const char *s;
     void*(*alloc_f)(size_t);
@@ -65,28 +121,25 @@ void test(int type) {
         alloc_f = malloc;
         free_f = free;
     } else if (type == 1) {
-        s = "myalloc";
+        s = "my_alloc";
         alloc_f = myAlloc::myalloc;
         free_f = myAlloc::myfree;
-    } else if (type == 2) {
-        s = "mempool example";
-        alloc_f = pool_alloc;
-        free_f = pool_free;
     }
+    assert(type != 2); // 本来 2 是留给另一个别人的内存池的
 
 
-    gettimeofday(&start, NULL);
     for (int i = 0; i < thread_num; ++i) {
-        t[i] = thread(std::bind(thread_func, (void **) v[i], alloc_f, free_f));
+        t[i] = thread(bind(thread_func, (void **) v[i], i, alloc_f, free_f));
     }
     for (int i = 0; i < thread_num; ++i) {
         t[i].join();
     }
-    gettimeofday(&end, NULL);
-    seconds = end.tv_sec - start.tv_sec;
-    microseconds = end.tv_usec - start.tv_usec;
-    duration = seconds + microseconds / 1000000.0;
-    printf("%s 执行时间: %f 秒\n", s, duration);
+
+    double duration = 0;
+    for (int i = 0; i < thread_num; ++i) {
+        duration += durations[i];
+    }
+    printf("%-10s: %lfs per thread  \n", s, duration / thread_num);
 }
 
 int main(int argc, char*argv[]) {

@@ -98,7 +98,7 @@ class Arena : NoCopy {
     int nthread = 0;
 
  private:
-    // 选择合适的指针类型, 像 set 用真实类型, cast 的次数很少.
+    // 选择合适的指针类型, 像 set_zero 用真实类型, cast 的次数很少.
     // void* 还是 char* 还是真实类型. 真实类型的话当心加减! 就算大部分对的, 错用一次就够烦的
 
     // 总的分配大小单元的函数

@@ -79,7 +79,7 @@ static void init_small(PageInfo *begin_page_i, int page_num, int bin_id) {
 // run_i 到 PageInfo 的距离
 const int RUNINFO_OFFSET = (p_t)(&((PageInfo*)0)->small.run_i);
 
-// chunk_sz_cmp 用在 set 的类型制定, 不需要构造对象
+// chunk_sz_cmp 用在 set_zero 的类型制定, 不需要构造对象
 struct page_sz_cmp {
     bool operator()(PageInfo *const lhs, PageInfo *const rhs) const {
         return lhs->get_num_luc() < rhs->get_num_luc() ||

@@ -43,12 +43,13 @@ constexpr int NBINS = sizeof(small_size) / sizeof(int); // 只有 small 去 bin?
 constexpr int MIN_REGION_NUM = 4;
 constexpr int BITS_NUM = 8 * sizeof(bitmap_t);
 constexpr int BITMAP_NUM_MAX = PAGE_SIZE /small_size[0];
-constexpr int BITMAP_GROUPS_MAX = BITMAP_NUM_MAX / sizeof(bitmap_t ) / 8;
+constexpr int BITMAP_GROUPS_MAX = BITMAP_NUM_MAX / BITS_NUM;
 constexpr int SMALL_SIZE_MAX = small_size[NBINS - 1];
 constexpr int LARGE_SIZE_MAX = 1792 KiB; // < CHUNK_SIZE
-constexpr int NCACHED_MAX = 32; // tcache 里一个 bin 的容量
+constexpr int TCACHED_MAX = 32; // tcache 里一个 bin 的容量
 constexpr int TCACHE_GC_INCR = 100; // 多少次事件(alloc, free)后 tcache 执行GC
 constexpr int CACHE_LINE_SIZE = 64;
 constexpr int CACHE_LINE_SHIFT = get_equal_shift(CACHE_LINE_SIZE);
+constexpr bool memory_leaks_detecet = false;
 
 } // namespace

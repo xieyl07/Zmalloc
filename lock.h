@@ -53,12 +53,15 @@ class SpinLock {
     }
     bool lock() {
         return pthread_spin_lock(&spinlock_) == 0;
+//        return true; // for test
     }
     bool trylock() {
         return pthread_spin_trylock(&spinlock_) == 0;
+//        return true; // for test
     }
     bool unlock() {
         return pthread_spin_unlock(&spinlock_) == 0;
+//        return true; // for test
     }
 
  private:

@@ -41,7 +41,9 @@ void RunInfo::init(int b_id) {
     bin_id = b_id;
     nfree = bin_info[bin_id].region_num;
     bitmap.set();
-    idx = 0;
+#ifdef use_next_fit
+    idx = -1;
+#endif
 }
 
 int RunInfo::find_region_id() {
@@ -51,6 +53,26 @@ int RunInfo::find_region_id() {
 
     int num = bin_info[bin_id].region_num;
 
+#ifdef use_next_fit
+    // next fit:
+    int tmp = idx;
+    while (++idx < num) {
+        if (bitmap[idx] == 1) {
+//            inO("1: %d", idx)
+            return idx;
+        }
+    }
+
+    idx = -1;
+//    inO("another loop")
+    while (++idx < tmp) {
+        if (bitmap[idx] == 1) {
+//            inO("2: %d", idx)
+            return idx;
+        }
+    }
+
+#else
     // first fit(jemalloc 用的是这种):
     for (int i = 0; i < num; ++i) {
         if (bitmap[i] == 1) {
@@ -58,26 +80,9 @@ int RunInfo::find_region_id() {
         }
     }
 
-//    // next fit:
-//    while (idx < num) {
-//        if (bitmap[idx] == 1) {
-////            inO("1: %d", idx)
-//            return idx++;
-//        }
-//        idx++;
-//    }
-//
-//    idx = 0;
-////    inO("another loop")
-//    while (idx < num) {
-//        if (bitmap[idx] == 1) {
-////            inO("2: %d", idx)
-//            return idx++;
-//        }
-//        idx++;
-//    }
+#endif
 
-    // nfree > 0, 但是没找到
+    // nfree > 0 但是没找到
     assert(false);
 }
 

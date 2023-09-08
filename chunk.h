@@ -23,8 +23,8 @@ struct Chunk : NoCopy {
     }
 };
 
-struct chunk_sz_cmp { // 按大小排序的两个 chunk set
-    // const 一定要! 不然 set 不能插入了
+struct chunk_sz_cmp { // 按大小排序的两个 chunk set_zero
+    // const 一定要! 不然 set_zero 不能插入了
     bool operator()(const Chunk *lhs, const Chunk *rhs) const {
         return lhs->pages_i[0].get_num_luc() < rhs->pages_i[0].get_num_luc() ||
                lhs->pages_i[0].get_num_luc() == rhs->pages_i[0].get_num_luc() && lhs < rhs;

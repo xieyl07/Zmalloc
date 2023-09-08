@@ -1,5 +1,3 @@
-#define r_no_d
-
 #include <vector>
 #include <sys/time.h>
 #include <thread>
@@ -8,8 +6,8 @@
 
 using namespace std;
 
-int inner_loop = 10000;
-int outer_loop = 10000;
+int inner_loop = 100;
+int outer_loop = 1000;
 
 void std_time_test() {
     for (int j = 0; j < outer_loop; ++j) {
@@ -60,7 +58,7 @@ int main() {
     seconds = end.tv_sec - start.tv_sec;
     microseconds = end.tv_usec - start.tv_usec;
     duration = seconds + microseconds / 1000000.0;
-    printf("std::allocator 执行时间: %f 秒\n", duration);
+    printf("std::allocator: %lfs\n", duration);
 
     // 2
     gettimeofday(&start, NULL);
@@ -74,7 +72,7 @@ int main() {
     seconds = end.tv_sec - start.tv_sec;
     microseconds = end.tv_usec - start.tv_usec;
     duration = seconds + microseconds / 1000000.0;
-    printf("myalloc 执行时间: %f 秒\n", duration);
+    printf("my_alloc: %lfs\n", duration);
 
     // 3
     gettimeofday(&start, NULL);
@@ -88,7 +86,7 @@ int main() {
     seconds = end.tv_sec - start.tv_sec;
     microseconds = end.tv_usec - start.tv_usec;
     duration = seconds + microseconds / 1000000.0;
-    printf("malloc 执行时间: %f 秒\n", duration);
+    printf("malloc: %lfw\n", duration);
 
     return 0;
 }

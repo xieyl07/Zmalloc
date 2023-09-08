@@ -5,8 +5,6 @@
 #include "tuning.h"
 #include "arena.h"
 
-//#define memory_leaks_detecet
-
 namespace myAlloc {
 
 // tcache 的好处在线程数大于四倍的cpu线程数的时候才能体现出来
@@ -31,10 +29,10 @@ class TCache : NoCopy {
 
         // 预分配, 初始化
         for (int i = 0; i < NBINS; ++i) {
-            for (int j = 0; j < NCACHED_MAX / 2; ++j) {
+            for (int j = 0; j < TCACHED_MAX / 2; ++j) {
                 tbins[i][j] = get_regions(i);
             }
-            low_water[i] = bin_pointer[i] = NCACHED_MAX / 2 - 1;
+            low_water[i] = bin_pointer[i] = TCACHED_MAX / 2 - 1;
             fill_shift[i] = 1;
             event_cnt[i] = 0;
         }
@@ -48,9 +46,9 @@ class TCache : NoCopy {
         for (int i = 0; i < NBINS; ++i) {
             fetch_regions(i, bin_pointer[i] + 1);
         }
-#ifdef memory_leaks_detecet
-        delete arena; // for test###
-#endif
+        if (memory_leaks_detecet) {
+            delete arena; // for test
+        }
     }
 
     // 算是一个总的入口, 外面不会直接访问 arena 的, 只会调用 tcache 的 alloc
@@ -68,7 +66,7 @@ class TCache : NoCopy {
         }
         int &pointer = bin_pointer[bin_id];
         if (pointer < 0) {
-            int fill_num = NCACHED_MAX >> fill_shift[bin_id];
+            int fill_num = TCACHED_MAX >> fill_shift[bin_id];
             for (int i = 0; i < fill_num; ++i) {
                 tbins[bin_id][i] = get_regions(bin_id);
             }
@@ -87,8 +85,8 @@ class TCache : NoCopy {
         if (++event_cnt[bin_id] == TCACHE_GC_INCR) {
             gc(bin_id);
         }
-        if (bin_pointer[bin_id] == NCACHED_MAX - 1) {
-            fetch_regions(bin_id, NCACHED_MAX / 2);
+        if (bin_pointer[bin_id] == TCACHED_MAX - 1) {
+            fetch_regions(bin_id, TCACHED_MAX / 2);
         }
         tbins[bin_id][++bin_pointer[bin_id]] = region;
     }
@@ -123,7 +121,7 @@ class TCache : NoCopy {
     int fill_shift[NBINS]; // 每次分配 ncached_max >> fill_shift
     int low_water[NBINS];
     int event_cnt[NBINS]; // TCACHE_GC_INCR
-    void *tbins[NBINS][NCACHED_MAX]; // bins 里的 bin 是一个指针数组
+    void *tbins[NBINS][TCACHED_MAX]; // bins 里的 bin 是一个指针数组
     int bin_pointer[NBINS]; // 指向非空的, 可以直接拿的
 };
 
