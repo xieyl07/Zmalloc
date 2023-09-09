@@ -23,7 +23,7 @@
 - `memory_leaks_detecet`简单的内存泄漏检测, 具体是tcache析构函数里调用`~Arena()`, Arena在整理完后检查是否有空闲page空闲run未归还.
 
 `run.h`
-- `#define use_next_fit` 开启`next fit`
+- `#define use_next_fit` 开启`NEXT fit`
 
 `myalloc_test.cc`
 - `thread_num`测试线程数
@@ -125,7 +125,7 @@ region_size: 14336, page_num:14, region_num:4
 - 对于小块, `TCACHED_MAX`内性能优于malloc, `TCACHED_MAX`外性能不如malloc. 观察到分配随机大小时, pt性能变得和my_alloc不相上下, 作为对比, 分配FIX_SMALL和RAN_SMALL的时候my_alloc用时几乎相同, 应该是有什么优化.
 - 在更加符合实际情况的"分配随机大小, 按随机顺序释放一部分"的情况下, `my_alloc`性能优于`malloc`
 - 线程数影响不大, 因为瓶颈在机器性能而不是线程竞争上吧
-- `first fit`和`next fit`在随机释放下影响不大
+- `FIRST fit`和`NEXT fit`在随机释放下影响不大
 - `inner_loop`和`outer_loop`数只有普通的线性影响, 没什么好说的
 
 所以内存池适合**少量**, **频繁**, 分配释放**特定大小**内存. 缺点是不好释放, 什么时机, 如果合并了, 哪个是边界呢. 所以最好程序生命期中都需要用到的场景.
@@ -136,9 +136,7 @@ region_size: 14336, page_num:14, region_num:4
 ## ONE MORE THING
 
 std::bitset, ffs, ffsll封装并且做了比较, 结果是:
-- 按顺序一个一个写入的情况下, 不考虑相当于作弊的`next fit`, `std::bitset`明显慢于`ffs`和`ffsll`的方法, 即使已经开了O2.
-- 随机写入并且使用O2编译的情况下, `std::bitset`数倍快于另外两个(必须O2). 可能是封装的`ffs`, `ffsll`的置位不够优化?
-- 优化级别, 使用`first fit`还是`next fit`对`ffs`, `ffsll`影响很小.  
+- 使用`first fit`下, bitset明显快而且稳定(必须O2). 肯定是编译器优化, `next fit`下不如另外两个.
 
 
 ## 最后
@@ -146,10 +144,10 @@ std::bitset, ffs, ffsll封装并且做了比较, 结果是:
 算是存档吧, 都没空做了, 把现有信息入栈.
 
 ### bug
-- [ ] `bitmap`里`bitset`的`bitset_next_find`还是错的, 测`bench_ran()`会死循环(那个while). 应该是没初始化, 但是结果又不对. 有空去修. 
+- [x] ~~`bitmap`里`bitset`的`bitset_next_find`还是错的, 测`bench_ran()`会死循环(那个while). 应该是没初始化, 但是结果又不对. 有空去修.~~
 - [ ] 更新, 是next fit会炸, next怎么这么短但是这么会错呢. ~~十多个以上的线程, loop多了会炸, 大小太大了好像也会炸. 开了RANDOM情况下SIZE大了会炸, 循环太多了可能也会炸. 炸的地方一般是`myfree`里的`assert`, 落到了`UNALLOCATED`, 一般是分配时候哪搞错了. 和`find_region`里的`assert`, 没有忘记初始化之类的情况的话, 就是`run`的管理出错了, 要继续往上查, 从哪来的, 怎么分配的, 什么时候被更改的. 和合并空闲page时从树中erase失败, 一般会碰到了一个莫名其妙的page num. 总之多线程问题倾向性于不是多线程带来的, 因为锁都很宽了, 而且arena数量还没到4倍. 养成了`assert`的习惯真好.~~
 
-反正就是`next fit`一直写不对
+反正就是`NEXT fit`一直写不对
 
 ### TODO
 

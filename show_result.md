@@ -13,7 +13,7 @@
 1. 大小的影响
 1. `TCACHED_MAX`的影响
 1. 随机下的测试
-1. `first fit`和`next fit`对比
+1. `FIRST fit`和`NEXT fit`对比
 1. 线程数的影响
 1. `inner_loop`和`outer_loop`数的影响
 
@@ -173,7 +173,7 @@ my_alloc  : 1.344247s per thread
 
 #### .5 分配固定大小(64字节), 按照分配顺序完全释放, 60线程, inner_loop = 100, outer_loop = 100000, next_fit
 
-## first fit 和 next fit 的影响
+## FIRST fit 和 NEXT fit 的影响
 
 #### 1.1 分配固定大小(64字节), 按照分配顺序完全释放, inner_loop = 30(TCACHED_MAX内), outer_loop = 100000, next_fit
 

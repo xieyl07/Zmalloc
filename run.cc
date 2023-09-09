@@ -54,7 +54,7 @@ int RunInfo::find_region_id() {
     int num = bin_info[bin_id].region_num;
 
 #ifdef use_next_fit
-    // next fit:
+    // NEXT fit:
     int tmp = idx;
     while (++idx < num) {
         if (bitmap[idx] == 1) {
@@ -73,7 +73,7 @@ int RunInfo::find_region_id() {
     }
 
 #else
-    // first fit(jemalloc 用的是这种):
+    // FIRST fit(jemalloc 用的是这种):
     for (int i = 0; i < num; ++i) {
         if (bitmap[i] == 1) {
             return i;

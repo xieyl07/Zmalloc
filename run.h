@@ -27,7 +27,7 @@ class RunInfo : NoCopy {
 
  private:
 #ifdef use_next_fit
-    int idx = -1; // next fit
+    int idx = -1; // NEXT fit
 #endif
     int find_region_id();
     // 查看状况
