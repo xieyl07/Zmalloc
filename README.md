@@ -126,6 +126,11 @@ region_size: 14336, page_num:14, region_num:4
 
 
 ## 性能测试
+
+`myalloc_test.cc`是与malloc对比, 比较完善的基准测试  
+`allocator_test.cc`是封装成类之后与`malloc`, `std::allocator`对比, 不完善  
+主要用`myalloc_test.cc`进行测试
+ 
 - 测试方法: 调整数据后重新编译, 均开启`-O2`优化
 
 ```shell
