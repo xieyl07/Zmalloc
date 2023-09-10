@@ -1,8 +1,10 @@
 # bitmap 测试
 
 结论:
-- 使用`first fit`下, bitset明显快而且稳定(必须O2). 肯定是编译器优化, `next fit`下不如另外两个. 
-
+- 使用`first fit`下, `bitset`随机数据和线性数据都快而稳定(必须O2). 肯定是编译器优化
+- `next fit`下`bitset`不如另外两个.
+- `bitmap64`稍快于`bitmap32`
+- 
 ```text
 first fit
 b32 linear: 0.663058

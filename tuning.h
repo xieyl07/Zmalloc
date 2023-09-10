@@ -51,5 +51,6 @@ constexpr int TCACHE_GC_INCR = 100; // 多少次事件(alloc, free)后 tcache �
 constexpr int CACHE_LINE_SIZE = 64;
 constexpr int CACHE_LINE_SHIFT = get_equal_shift(CACHE_LINE_SIZE);
 constexpr bool memory_leaks_detecet = false;
+constexpr bool bulk_alloc = true;
 
 } // namespace

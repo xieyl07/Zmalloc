@@ -16,14 +16,13 @@
 `./a.out 0`作为对比, 使用`malloc`和`free`
 
 ### 调整参数
+
 `tuning.h`
 - `MIN_REGION_NUM`调整一个`run`的最小`region`数量
 - `TCACHED_MAX`tcache里一个bin的最大容量(影响到tcache的缓冲内存块数量)
 - `TCACHE_GC_INCR`tcache多少次操作之后进行GC
 - `memory_leaks_detecet`简单的内存泄漏检测, 具体是tcache析构函数里调用`~Arena()`, Arena在整理完后检查是否有空闲page空闲run未归还.
-
-`run.h`
-- `#define use_next_fit` 开启`NEXT fit`
+- `bulk_alloc`让tcache向arena批量申请
 
 `myalloc_test.cc`
 - `thread_num`测试线程数
@@ -56,11 +55,11 @@ chunk的头部有几个page不分配, 存储page的管理单元. 一个管理单
 
 具体的, 对应的的管理信息存在chunk中, arena像是更大的调度. 反正arena里的是指向空闲page, chunk的指针, 用RBTree管理. arena里还有bins, 多个bin的数组. 操作small时候, 根据大小得到bin_id, 就得到了bin所在. bin是run的指针管理者. 总之arena里面净是指针, 和chunk里的管理单元的感觉不一样.
 
-常数时间内几个概念相互转换: 不说了, 看图吧
+最后上图:
 
 ![结构](arena.png)
 
-怎么分配释放合并清理: 有空再解释
+怎么分配释放合并清理, 常数时间内几个概念相互转换. 懒得写了
 
 附一张small size对照表, 测试时候生成的, 顺便附过来了.
 
@@ -111,21 +110,38 @@ region_size: 14336, page_num:14, region_num:4
 打印地址(16进制)用 printf. `printf "%p", chunk + 1`, 就是比printf少了括号, 以前学过, 只是不记得了  
 不能后退, 就打日志吧. 不像业务信息看了就明白, 还是慢慢断点一点一点往回查吧.  
 内存泄漏和越界访问问题检测可以用`valgrind`, 可以编译时加上`-fsanitize=address`. #define memory_leaks_detecet就可以进行内存泄漏的测试
+养成逻辑上不可能但是应该考虑的情况下多写点`assert`的习惯. 线程调到60的情况下`assert`都能过就没问题了
 
 ## 性能优化
-最初写完的时候性能还比不上malloc. 用`perf record -g ./a.out`, `perf report -g`分析性能, 把几个对性能影响大的函数进行优化. 和想象的不同, tcache在构造函数里向系统分配内存的时间不是问题, 但是在 run 的 bitmap 非常影响性能, 先用 `ffs` 代替自己的循环, 再用 `std::bitset`, 性能有了明显提升. 还有是地址转换函数尽量多利用手上已有的, 不要上来就从头转换. 不过架构定了性能不会有大变化了. 另外就是找测试方法测试数据, 摸清分配器适合什么不适合什么.
+最初写完的时候性能还比不上malloc.
+
+用`perf record -g ./a.out`, `perf report -g`分析性能, 把几个对性能影响大的函数进行优化. 和想象的不同, tcache预分配内存花的时间不是问题, 但是`run`的`bitmap`非常影响性能. 先用`ffs`代替自己的循环, 再用 `std::bitset`, 性能有了明显提升.
+
+还有是地址转换函数尽量多利用手上已有的, 不要上来就从头转换. 虽然是简单函数, 毕竟执行次数多还是影响大.
+
+另外对占用较大的`TCache::alloc()`进行优化, 让`tcache`向`arena`集中申请分配, 调用`Arena::bulk_alloc_small()`, 性能有了明显提升  
+(测试结果见[bulk_alloc_test](bulk_alloc_test.md))
+
+另外就是找测试方法测试数据, 摸清分配器适合什么不适合什么.
 
 
 ## 性能测试
-- 测试方法: 均开启`-O2`优化, `for ((i=0; i<3; i++)); do ./a.out 0 && ./a.out 1; done`, `inner_loop`次分配, 释放, 重复`outer_loop`次.
+- 测试方法: 调整数据后重新编译, 均开启`-O2`优化
+
+```shell
+`g++ -O2 myalloc_test.cc run.cc && for ((i=0; i<3; i++)); do ./a.out 0 && ./a.out 1; done`
+```
 
 ### 测试结果:
 
-- 大块内存下`pt`性能变差的更快. 可能是`pt`要考虑利用率问题所以偏保守?
-- 对于小块, `TCACHED_MAX`内性能优于malloc, `TCACHED_MAX`外性能不如malloc. 观察到分配随机大小时, pt性能变得和my_alloc不相上下, 作为对比, 分配FIX_SMALL和RAN_SMALL的时候my_alloc用时几乎相同, 应该是有什么优化.
+(数据不可靠, 有时候过段时间测出完全不同的结果)
+
+- `malloc`在 随机释放随机数量 下的性能比 按分配的顺序完全释放 差很多
+- `malloc`在 块大小变大(64->1700) 的情况下 性能变差很快
+- 对于小块, `TCACHED_MAX`内性能优于malloc, `TCACHED_MAX`外性能不如malloc. 观察到分配随机大小时, pt性能变得和my_alloc不相上下, 作为对比, my_alloc在分配FIX_SMALL和RAN_SMALL时用时几乎相同, 应该是有什么优化.
 - 在更加符合实际情况的"分配随机大小, 按随机顺序释放一部分"的情况下, `my_alloc`性能优于`malloc`
 - 线程数影响不大, 因为瓶颈在机器性能而不是线程竞争上吧
-- `FIRST fit`和`NEXT fit`在随机释放下影响不大
+- `first fit`和`next fit`在随机释放下影响不大
 - `inner_loop`和`outer_loop`数只有普通的线性影响, 没什么好说的
 
 所以内存池适合**少量**, **频繁**, 分配释放**特定大小**内存. 缺点是不好释放, 什么时机, 如果合并了, 哪个是边界呢. 所以最好程序生命期中都需要用到的场景.
@@ -136,8 +152,11 @@ region_size: 14336, page_num:14, region_num:4
 ## ONE MORE THING
 
 std::bitset, ffs, ffsll封装并且做了比较, 结果是:
-- 使用`first fit`下, bitset明显快而且稳定(必须O2). 肯定是编译器优化, `next fit`下不如另外两个.
+- 使用`first fit`下, `bitset`随机数据和线性数据都快而稳定(必须O2). 肯定是编译器优化
+- `next fit`下`bitset`不如另外两个.
+- `bitmap64`稍快于`bitmap32`
 
+[测试结果](bitmap_test.md)
 
 ## 最后
 
@@ -145,17 +164,18 @@ std::bitset, ffs, ffsll封装并且做了比较, 结果是:
 
 ### bug
 - [x] ~~`bitmap`里`bitset`的`bitset_next_find`还是错的, 测`bench_ran()`会死循环(那个while). 应该是没初始化, 但是结果又不对. 有空去修.~~
-- [ ] 更新, 是next fit会炸, next怎么这么短但是这么会错呢. ~~十多个以上的线程, loop多了会炸, 大小太大了好像也会炸. 开了RANDOM情况下SIZE大了会炸, 循环太多了可能也会炸. 炸的地方一般是`myfree`里的`assert`, 落到了`UNALLOCATED`, 一般是分配时候哪搞错了. 和`find_region`里的`assert`, 没有忘记初始化之类的情况的话, 就是`run`的管理出错了, 要继续往上查, 从哪来的, 怎么分配的, 什么时候被更改的. 和合并空闲page时从树中erase失败, 一般会碰到了一个莫名其妙的page num. 总之多线程问题倾向性于不是多线程带来的, 因为锁都很宽了, 而且arena数量还没到4倍. 养成了`assert`的习惯真好.~~
+- [x] 更新, 是`next fit`会炸, 这么短的东西怎么就写不好呢. 最后删了, 想要的话用`bitmap.h`里的就行了. ~~十多个以上的线程, loop多了会炸, 大小太大了好像也会炸. 开了RANDOM情况下SIZE大了会炸, 循环太多了可能也会炸. 炸的地方一般是`myfree`里的`assert`, 落到了`UNALLOCATED`, 一般是分配时候哪搞错了. 和`find_region`里的`assert`, 没有忘记初始化之类的情况的话, 就是`run`的管理出错了, 要继续往上查, 从哪来的, 怎么分配的, 什么时候被更改的. 和合并空闲page时从树中erase失败, 一般会碰到了一个莫名其妙的page num. 总之多线程问题倾向性于不是多线程带来的, 因为锁都很宽了, 而且arena数量还没到4倍~~
 
-反正就是`NEXT fit`一直写不对
+`next fit`就是写不对, 哎
 
 ### TODO
 
 - [x] 去测一下随机释放后, 有碎片的情况下的分配的性能
-- [ ] 尝试让`tcache`一次向`arena`申请释放多块内存. 传参数不是问题, 但是对性能有帮助吗
+- [x] 尝试让`tcache`一次向`arena`申请释放多块内存. 传参数不是问题, 但是对性能有帮助吗
 - [x] `std::bitset`, `ffs`, `ffsll`比较, 封装.
 - [ ] 给基准测试画图
 - [ ] 加上命令行选项. 命令行里测试是用参数方便, ide里是直接改源文件方便, 测试用脚本写
 - [ ] 内存池还有可以优化的地方. 在tcache剩余容量小于某个值的时候, 启动后台线程向arena申请分配. / 虽然引入锁了, 应该影响不大. 可以把缓存容器变成单读者单写者的无锁队列. / tcache就该是个缓冲压力的东西, 像水库一样. 就是不能预测后面会大量分配还是大量释放. 而且程序是同步的, 池子空之前提前去要也没什么好处, 都是阻塞, 可能高峰期延迟第一点的程度.
+- [ ] 现在的想法是释放时绕过`tcache`, 见`myalloc.h`里面写的. gc是不是也要改. 多少次操作之后就分配或释放到标准线
 
 有空一定, 有缘再见(雾)

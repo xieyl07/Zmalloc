@@ -84,11 +84,35 @@ class Arena : NoCopy {
     inline void* alloc(int size);
 
     inline char* alloc_small(int bin_id);
+    inline void bulk_alloc_small(int bin_id, void **target, int num) {
+        Bin *bin = bins + bin_id;
+        int r_size = (bin_info + bin_id)->region_size;
+        bin->lock.lock();
+
+        while (num > 0) {
+            RunInfo *run_i = get_run_i(bin_id, num);
+            int tmp = run_i->get_nregion_id(target, num);
+            char *run = run_i_to_page(a2c(run_i));
+
+            // filling
+            for (int i = 0; i < tmp; ++i) {
+                target[i] = run + r_size * (int)(long)target[i];
+            }
+            target += tmp;
+            num -= tmp;
+        }
+
+        bin->lock.unlock();
+    }
     inline void* alloc_large(int size);
     inline void* alloc_huge(int size);
 
     // free 的接口没必要, 就是 myalloc 里那个 dispatch. 真想要就复制过来就行了
     inline void free_small(char *addr, PageInfo *page_i);
+    // 现在的做法是释放时绕过tcache. 集中释放的话可能需要这个, 不过更需要改一改tbin.
+    // 向tbin free的时候是有拿到run_i的, tcache放到tbin之后就扔掉了, 有点浪费.
+    // 而且一些散的东西也没法集中释放
+    inline void bulk_free_small(char **addr, int num);
     inline void free_large(PageInfo *page_i);
     inline void free_huge(Chunk *chunk);
 
@@ -110,7 +134,7 @@ class Arena : NoCopy {
     inline void fetch_npage(PageInfo *page, int page_num);
     inline void fetch_chunk(Chunk *chunk);
 
-    // 具体的分配途径
+    inline RunInfo* get_run_i(int bin_id, int acquired_num);
     inline PageInfo* splice_page_tree(int page_num);
     inline Chunk* splice_chunk_tree(int num);
 
@@ -277,32 +301,40 @@ void Arena::deal_remaining_pages(PageInfo *page_i, int page_num) {
 char* Arena::alloc_small(int bin_id) {
     Bin *bin = bins + bin_id;
     bin->lock.lock();
+
+    RunInfo *run_i = get_run_i(bin_id, 1);
+
+    // run_i 还留在 bin 里, 所以要么对 run_i 上锁, 要么继续持有 bin 的锁
+    char *ret = run_i->get_region();
+    bin->lock.unlock();
+
+    return ret;
+}
+
+// 具体的分配途径. acquired_num 变成还差多少
+RunInfo* Arena::get_run_i(int bin_id, int acquired_num) {
+    Bin *bin = bins + bin_id;
     RunInfo *run_i = bin->cur_run;
     if (run_i) {
-        if (run_i->nfree == 1) {
+        // 如果不够大就从 cur_run拿掉
+        if (run_i->nfree <= acquired_num) {
             bin->cur_run = nullptr;
         }
     } else if (!bin->nonfull_runs.empty()) {
         run_i = *bin->nonfull_runs.begin();
         bin->nonfull_runs.erase(bin->nonfull_runs.begin());
-        if (run_i->nfree > 1) {
+        // 如果有多就放到 cur_run
+        if (run_i->nfree > acquired_num) {
             bin->cur_run = run_i;
         }
     } else {
         run_i = get_run(bin_id);
-//        if (bin_id == 12) inO("alloc run! %d %d %d", bin_id, run_i->nfree, run_i->bitmap.count())
-        if (run_i->nfree > 1) {
+        // 如果有多就放到 cur_run
+        if (run_i->nfree > acquired_num) {
             bin->cur_run = run_i;
         }
     }
-
-//    if (bin_id == 12) inO("%d %d %d %p", bin_id, run_i->nfree, run_i->bitmap.count(), run_i)
-    // run_i 还留在 bin 里, 所以要么对 run_i 上锁, 要么继续持有 bin 的锁
-    char *ret = run_i->get_region();
-//    if (bin_id == 12) inO("%d %d %d %p", bin_id, run_i->nfree, run_i->bitmap.count(), run_i)
-    bin->lock.unlock();
-
-    return ret;
+    return run_i;
 }
 
 PageInfo* Arena::get_npage(int page_num) {
@@ -461,7 +493,7 @@ void Arena::free_small(char *addr, PageInfo *page_i) {
     BinInfo *bin_i = bin_info + run_i.bin_id;
     int region_id = (addr - run) / bin_i->region_size;
     assert(region_id < 512);
-    run_i.fetch_region_id(region_id);
+    run_i.fetch_region(region_id);
 
     // run 的所有操作都要上 bin 的锁
     Bin &bin = bins[run_i.bin_id];

@@ -44,7 +44,7 @@ inline char* page_i_to_page(PageInfo * page_i) {
 }
 
 // 总的. 默认是 run 的第一个 page 的 RunInfo
-inline char* run_i_to_page_small(char *run_info) {
+inline char* run_i_to_page(char *run_info) {
     PageInfo *page_i = run_i_to_run_page_i(run_info);
     return page_i_to_page(page_i);
 }

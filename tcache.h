@@ -29,8 +29,12 @@ class TCache : NoCopy {
 
         // 预分配, 初始化
         for (int i = 0; i < NBINS; ++i) {
-            for (int j = 0; j < TCACHED_MAX / 2; ++j) {
-                tbins[i][j] = get_regions(i);
+            if (bulk_alloc) {
+                arena->bulk_alloc_small(i, tbins[i], TCACHED_MAX / 2);
+            } else {
+                for (int j = 0; j < TCACHED_MAX / 2; ++j) {
+                    tbins[i][j] = get_region(i);
+                }
             }
             low_water[i] = bin_pointer[i] = TCACHED_MAX / 2 - 1;
             fill_shift[i] = 1;
@@ -44,7 +48,7 @@ class TCache : NoCopy {
         arenas.insert(arena);
         arenas_lock.unlock();
         for (int i = 0; i < NBINS; ++i) {
-            fetch_regions(i, bin_pointer[i] + 1);
+            fetch_region(i, bin_pointer[i] + 1);
         }
         if (memory_leaks_detecet) {
             delete arena; // for test
@@ -67,8 +71,12 @@ class TCache : NoCopy {
         int &pointer = bin_pointer[bin_id];
         if (pointer < 0) {
             int fill_num = TCACHED_MAX >> fill_shift[bin_id];
-            for (int i = 0; i < fill_num; ++i) {
-                tbins[bin_id][i] = get_regions(bin_id);
+            if (bulk_alloc) {
+                arena->bulk_alloc_small(bin_id, tbins[bin_id], fill_num);
+            } else {
+                for (int i = 0; i < fill_num; ++i) {
+                    tbins[bin_id][i] = get_region(bin_id);
+                }
             }
             pointer = fill_num - 1;
         }
@@ -86,7 +94,7 @@ class TCache : NoCopy {
             gc(bin_id);
         }
         if (bin_pointer[bin_id] == TCACHED_MAX - 1) {
-            fetch_regions(bin_id, TCACHED_MAX / 2);
+            fetch_region(bin_id, TCACHED_MAX / 2);
         }
         tbins[bin_id][++bin_pointer[bin_id]] = region;
     }
@@ -100,14 +108,14 @@ class TCache : NoCopy {
         } else if (remainint_water > 7) { // 比标准改了改
             ++fill_shift[bin_id];
             int free_num = remainint_water / 2; // 标准是 3 / 4
-            fetch_regions(bin_id, free_num);
+            fetch_region(bin_id, free_num);
         }
     }
-    void* get_regions(int bin_id) {
+    void* get_region(int bin_id) {
         // 调用 arena 的地方, 想想手上有什么, 是不是可以传过去一点, 免得重复计算
         return arena->alloc_small(bin_id);
     }
-    void fetch_regions(int bin_id, int free_num) {
+    void fetch_region(int bin_id, int free_num) {
         for (int i = 0; i < free_num; ++i) {
             // 其实返还到自己的 arena 也没事的, 因为按地址找管理单元, 不会找错的
             // 就是可能会偷别的 arena 的 page, 搞得不均匀

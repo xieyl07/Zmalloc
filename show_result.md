@@ -13,7 +13,7 @@
 1. 大小的影响
 1. `TCACHED_MAX`的影响
 1. 随机下的测试
-1. `FIRST fit`和`NEXT fit`对比
+1. `first fit`和`next fit`对比
 1. 线程数的影响
 1. `inner_loop`和`outer_loop`数的影响
 
@@ -111,6 +111,14 @@ my_alloc  : 0.244183s per thread
 malloc    : 0.222824s per thread  
 my_alloc  : 0.243819s per thread  
 
+malloc    : 0.162659s per thread  
+my_alloc  : 0.048713s per thread  
+malloc    : 0.137612s per thread  
+my_alloc  : 0.054283s per thread  
+malloc    : 0.124685s per thread  
+my_alloc  : 0.056470s per thread  
+好奇怪啊, 又测了一次又不一样了. 这个的变数好大
+
 #### 2.1 分配随机大小(1-1024字节), 按照分配顺序完全释放, inner_loop = 30
 malloc    : 1.243445s per thread  
 my_alloc  : 0.182761s per thread  
@@ -125,40 +133,16 @@ my_alloc  : 0.236132s per thread
 #### 2.3 分配随机大小(256-256KB), 按照分配顺序完全释放, inner_loop = 30
 
 
-## 3. TCACHED_MAX的影响
-
 #### 3.1 分配固定大小(64字节), 按照分配顺序完全释放, inner_loop = 100
-malloc    : 0.260923s per thread  
-my_alloc  : 0.417991s per thread  
-malloc    : 0.265674s per thread  
-my_alloc  : 0.417570s per thread  
-malloc    : 0.276382s per thread  
-my_alloc  : 0.421104s per thread  
 
 
 #### .1 分配随机大小(1-1024字节), 按照分配顺序完全释放, inner_loop = 100
-malloc    : 0.160264s per thread  
-my_alloc  : 0.217643s per thread  
-malloc    : 0.161851s per thread  
-my_alloc  : 0.202134s per thread  
-malloc    : 0.167909s per thread  
-my_alloc  : 0.211136s per thread  
+
 
 #### .1 分配固定大小(1700字节), 按照分配顺序完全释放, inner_loop = 100
-malloc    : 4.360611s per thread  
-my_alloc  : 0.575104s per thread  
-malloc    : 3.568441s per thread  
-my_alloc  : 0.553265s per thread  
-malloc    : 3.605131s per thread  
-my_alloc  : 0.629348s per thread  
+
 
 #### .1 分配固定大小(1700字节), 按照分配顺序完全释放, inner_loop = 100, 打开memset(因为感觉不真实不知道为什么)
-malloc    : 4.436878s per thread  
-my_alloc  : 1.383312s per thread  
-malloc    : 4.484728s per thread  
-my_alloc  : 1.353482s per thread  
-malloc    : 4.293252s per thread  
-my_alloc  : 1.344247s per thread  
 
 
 ## 5. 线程数影响
@@ -173,7 +157,7 @@ my_alloc  : 1.344247s per thread
 
 #### .5 分配固定大小(64字节), 按照分配顺序完全释放, 60线程, inner_loop = 100, outer_loop = 100000, next_fit
 
-## FIRST fit 和 NEXT fit 的影响
+## first fit 和 next fit 的影响
 
 #### 1.1 分配固定大小(64字节), 按照分配顺序完全释放, inner_loop = 30(TCACHED_MAX内), outer_loop = 100000, next_fit
 

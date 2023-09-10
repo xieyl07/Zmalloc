@@ -41,63 +41,61 @@ void RunInfo::init(int b_id) {
     bin_id = b_id;
     nfree = bin_info[bin_id].region_num;
     bitmap.set();
-#ifdef use_next_fit
-    idx = -1;
-#endif
 }
 
-int RunInfo::find_region_id() {
+// 查找, 取出并置位
+int RunInfo::fetch_region_id() {
     if (nfree < 1) {
         assert(false);
     }
 
+    --nfree;
     int num = bin_info[bin_id].region_num;
 
-#ifdef use_next_fit
-    // NEXT fit:
-    int tmp = idx;
-    while (++idx < num) {
-        if (bitmap[idx] == 1) {
-//            inO("1: %d", idx)
-            return idx;
-        }
-    }
-
-    idx = -1;
-//    inO("another loop")
-    while (++idx < tmp) {
-        if (bitmap[idx] == 1) {
-//            inO("2: %d", idx)
-            return idx;
-        }
-    }
-
-#else
     // FIRST fit(jemalloc 用的是这种):
     for (int i = 0; i < num; ++i) {
         if (bitmap[i] == 1) {
+            bitmap[i] = 0;
             return i;
         }
     }
-
-#endif
 
     // nfree > 0 但是没找到
     assert(false);
 }
 
 char* RunInfo::get_region() {
-    int region_id = find_region_id();
-    take_region_id(region_id);
+    int region_id = fetch_region_id();
 
-    --nfree;
-
-    PageInfo *page_i = run_i_to_run_page_i(a2c(this));
-    Chunk *chunk = addr_to_chunk(this);
-    int page_id = page_i_to_page_id(page_i, chunk);
-    char *run = page_id_to_page(page_id, a2c(chunk));
+    char *run = run_i_to_page(a2c(this));
     BinInfo *bin_i = bin_info + bin_id;
     return run + bin_i->region_size * region_id;
+}
+
+// 返回还剩几个要分配. 把 region_id 结果写入 target 数组
+// 如果num超过数组大小, 你就等着吧. 这次是nfree被写入变成 0
+int RunInfo::get_nregion_id(void **target, int num) {
+    assert(nfree > 0 && num > 0);
+
+    int ret = num;
+    int loop = std::min(nfree, num);
+    if (num >= nfree) {
+        num -= nfree;
+        ret = nfree;
+        nfree = 0;
+    } else {
+        nfree -= num;
+    }
+
+    for (int i = 0; loop > 0; ++i) {
+        if (bitmap[i] == 1) {
+            bitmap[i] = 0;
+            *target++ = a2c(i);
+            --loop;
+        }
+    }
+
+    return ret;
 }
 
 // 测试给的地址是否是有效地址.
@@ -105,7 +103,7 @@ bool RunInfo::is_allocated_region(char *addr) {
     // 比较费性能, 算了不用了
     return true;
     // 默认 this 真的是 small 的第一个 page 的 RunInfo
-    char *run_page = run_i_to_page_small(a2c(this));
+    char *run_page = run_i_to_page(a2c(this));
     if(addr < run_page || addr >= run_page + PAGE_SIZE) {
         return false;
     }
@@ -120,7 +118,7 @@ bool RunInfo::is_allocated_region(char *addr) {
         return false;
     }
 
-    if (get_region_id(region_id) == 0) {
+    if (bitmap[region_id] == 0) {
         return false;
     }
     return true;

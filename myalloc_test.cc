@@ -9,17 +9,16 @@
 
 using namespace std;
 
-enum release_type{FULL, RANDOM};
-enum size_type{FIX_SMALL, FIX_MID, FIX_LARGE, RAN_SMALL, RAN_MID};
+enum release_type{FULL, RAN};
+enum size_type{FIX_S, FIX_M, FIX_L, RAN_S, RAN_M};
 
-// 要调的
-constexpr int thread_num = 1000;
+/********************* 可以调整的测试方法 *********************/
+constexpr int thread_num = 1;
 constexpr int inner_loop = 1000;
-constexpr int outer_loop = 100;
-constexpr size_type size_switch = RAN_MID;
+constexpr int outer_loop = 1000;
+constexpr size_type size_switch = FIX_M;
 constexpr bool enable_memset = true;
-constexpr release_type release_type_switch = RANDOM;
-// #define use_next_fit 在 run.h里
+constexpr release_type release_type_switch = FULL;
 
 
 constexpr int ran_array_size = 1024 * 1024 * 8;
@@ -49,26 +48,26 @@ void thread_func(void *v[], int tid, void*(*alloc_f)(size_t), void(*free_f)(void
     for (int i = 0; i < outer_loop; ++i) {
         for (int j = 0; j < inner_loop; ++j) {
             switch (size_switch) {
-            case FIX_SMALL:
+            case FIX_S:
                 sz = 64;
                 break;
-            case FIX_MID:
+            case FIX_M:
             {
                 sz = 1700;
                 break;
             }
-            case FIX_LARGE:
+            case FIX_L:
             {
                 sz = 64 * 1024;
                 break;
             }
-            case RAN_SMALL:
+            case RAN_S:
             {
                 sz = ran_a[cnt] % 1024 + 1; // 别忘 +1
                 cnt = (cnt + 1) % ran_array_size;
                 break;
             }
-            case RAN_MID:
+            case RAN_M:
             {
                 sz = (ran_a[cnt] % 1024 + 1) * 256; // [256, 256KB] 小部分 small 和 large
                 cnt = (cnt + 1) % ran_array_size;
@@ -87,7 +86,7 @@ void thread_func(void *v[], int tid, void*(*alloc_f)(size_t), void(*free_f)(void
             }
             break;
         }
-        case RANDOM:
+        case RAN:
         {
             for (int j = 0; j < inner_loop; ++j) {
                 int k = ran_a[cnt] % inner_loop;
