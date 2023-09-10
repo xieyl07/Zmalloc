@@ -6,7 +6,7 @@
 
 namespace myAlloc {
 
-static inline BinInfo* bin_info_init() {
+static inline const BinInfo* bin_info_init() {
     auto bin_i = new BinInfo[NBINS];
     for (int i = 0; i < NBINS; ++i) {
         int region_size = bin_i[i].region_size = small_size[i];
@@ -20,7 +20,7 @@ static inline BinInfo* bin_info_init() {
     return bin_i;
 }
 
-BinInfo *bin_info = bin_info_init();
+const BinInfo *bin_info = bin_info_init();
 
 static constexpr unsigned map_bias_init() {
     int bias = 0;
@@ -44,7 +44,7 @@ void RunInfo::init(int b_id) {
 }
 
 // 查找, 取出并置位
-int RunInfo::fetch_region_id() {
+int RunInfo::get_region_id() {
     if (nfree < 1) {
         assert(false);
     }
@@ -65,10 +65,10 @@ int RunInfo::fetch_region_id() {
 }
 
 char* RunInfo::get_region() {
-    int region_id = fetch_region_id();
+    int region_id = get_region_id();
 
     char *run = run_i_to_page(a2c(this));
-    BinInfo *bin_i = bin_info + bin_id;
+    auto bin_i = bin_info + bin_id;
     return run + bin_i->region_size * region_id;
 }
 
@@ -108,7 +108,7 @@ bool RunInfo::is_allocated_region(char *addr) {
         return false;
     }
 
-    BinInfo *bin_i = bin_info + bin_id;
+    auto bin_i = bin_info + bin_id;
     if ((addr - run_page) % bin_i->region_size != 0) {
         return false;
     }

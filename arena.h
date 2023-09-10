@@ -490,7 +490,7 @@ void Arena::free_small(char *addr, PageInfo *page_i) {
     char *run = page_i_to_page(run_page_i);
     RunInfo &run_i = run_page_i->small.run_i;
     assert(run_i.bin_id < NBINS);
-    BinInfo *bin_i = bin_info + run_i.bin_id;
+    auto bin_i = bin_info + run_i.bin_id;
     int region_id = (addr - run) / bin_i->region_size;
     assert(region_id < 512);
     run_i.fetch_region(region_id);

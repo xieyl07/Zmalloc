@@ -24,7 +24,7 @@ class RunInfo : NoCopy {
     }
 
  private:
-    int fetch_region_id();
+    int get_region_id();
 
 //    // used: 0, unused: 1, 为了能用 ffs. alloc_map[0] 从低位到高位
 //    bitmap_t alloc_map[BITMAP_GROUPS_MAX];

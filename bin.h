@@ -24,7 +24,7 @@ struct BinInfo : NoCopy {
     int region_num;
 };
 
-extern BinInfo* bin_info; // 偷懒放到 run.cpp 里调用bin_info_init初始化他
+extern const BinInfo* bin_info; // 偷懒放到 run.cpp 里调用bin_info_init初始化他
 
 extern char size_class[]; // 偷懒放到 run.cpp
 
