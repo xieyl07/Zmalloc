@@ -8,7 +8,7 @@ g++ -O2 run.cc myalloc_test.cc && for ((i=0; i<10; i++)); do ./a.out 0 && ./a.ou
 结论:
 - 使用`bulk_alloc`能有效提高性能约30%
 - 另外还可以看出, `malloc`在 随机释放随机数量 下的性能比 按分配的顺序完全释放 差很多
-- 另外还可以看出, `malloc`在 块大小变大(64->1700) 的情况下 性能变差很快
+- 另外还可以看出, `malloc`在 块大小变大(64->1700) 的情况下 性能变差很快, `strace`查看发现, `futex`的用时占了了99.9%. 原因不明
 
 ## 结果展示
 
@@ -280,3 +280,36 @@ my_alloc  : 0.074049s per thread
 malloc    : 1.261480s per thread  
 my_alloc  : 0.050988s per thread  
 ```
+
+由于差距过大, 使用`strace -c ./a.out 0`查看. 结果如下:
+
+```text
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 99.85    1.107467      553733         2           futex
+  0.05    0.000609         609         1           execve
+  0.04    0.000467          18        25           mmap
+  0.01    0.000118          19         6           openat
+  0.01    0.000103          14         7           mprotect
+  0.01    0.000085          17         5           read
+  0.01    0.000067          11         6           newfstatat
+  0.00    0.000040           6         6           close
+  0.00    0.000036          36         1           munmap
+  0.00    0.000029           9         3           brk
+  0.00    0.000027          27         1           write
+  0.00    0.000015          15         1         1 access
+  0.00    0.000015           7         2         1 arch_prctl
+  0.00    0.000012           6         2           pread64
+  0.00    0.000008           8         1           getrandom
+  0.00    0.000007           7         1           prlimit64
+  0.00    0.000006           6         1           set_tid_address
+  0.00    0.000005           5         1           set_robust_list
+  0.00    0.000005           5         1           rseq
+  0.00    0.000004           4         1           clone3
+  0.00    0.000000           0         1           rt_sigaction
+  0.00    0.000000           0         3           rt_sigprocmask
+------ ----------- ----------- --------- --------- ----------------
+100.00    1.109125       14219        78         2 total
+```
+
+`strace ./a.out 0`的输出在[这里](malloc.log)
