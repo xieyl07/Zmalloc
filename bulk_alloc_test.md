@@ -29,50 +29,30 @@ constexpr bool enable_memset = true;
 #### 未开启的测试结果:
 
 ```text
-malloc    : 0.053594s per thread  
-my_alloc  : 0.095776s per thread  
-malloc    : 0.072742s per thread  
-my_alloc  : 0.106248s per thread  
-malloc    : 0.053572s per thread  
-my_alloc  : 0.099129s per thread  
-malloc    : 0.034862s per thread  
-my_alloc  : 0.092891s per thread  
-malloc    : 0.052588s per thread  
-my_alloc  : 0.111607s per thread  
-malloc    : 0.041407s per thread  
-my_alloc  : 0.102602s per thread  
-malloc    : 0.053565s per thread  
-my_alloc  : 0.113423s per thread  
-malloc    : 0.054056s per thread  
-my_alloc  : 0.100214s per thread  
-malloc    : 0.053550s per thread  
-my_alloc  : 0.089263s per thread  
-malloc    : 0.057135s per thread  
-my_alloc  : 0.111011s per thread  
+malloc    : 0.053594s  0.095776s :    my_alloc (per thread)  
+malloc    : 0.072742s  0.106248s :    my_alloc (per thread)  
+malloc    : 0.053572s  0.099129s :    my_alloc (per thread)  
+malloc    : 0.034862s  0.092891s :    my_alloc (per thread)  
+malloc    : 0.052588s  0.111607s :    my_alloc (per thread)  
+malloc    : 0.041407s  0.102602s :    my_alloc (per thread)  
+malloc    : 0.053565s  0.113423s :    my_alloc (per thread)  
+malloc    : 0.054056s  0.100214s :    my_alloc (per thread)  
+malloc    : 0.053550s  0.089263s :    my_alloc (per thread)  
+malloc    : 0.057135s  0.111011s :    my_alloc (per thread)  
 ```
 #### 开启后的测试结果:
 
 ```text
-malloc    : 0.053594s per thread  
-my_alloc  : 0.095776s per thread  
-malloc    : 0.072742s per thread  
-my_alloc  : 0.106248s per thread  
-malloc    : 0.053572s per thread  
-my_alloc  : 0.099129s per thread  
-malloc    : 0.034862s per thread  
-my_alloc  : 0.092891s per thread  
-malloc    : 0.052588s per thread  
-my_alloc  : 0.111607s per thread  
-malloc    : 0.041407s per thread  
-my_alloc  : 0.102602s per thread  
-malloc    : 0.053565s per thread  
-my_alloc  : 0.113423s per thread  
-malloc    : 0.054056s per thread  
-my_alloc  : 0.100214s per thread  
-malloc    : 0.053550s per thread  
-my_alloc  : 0.089263s per thread  
-malloc    : 0.057135s per thread  
-my_alloc  : 0.111011s per thread  
+malloc    : 0.053594s  0.024875s :    my_alloc (per thread)  
+malloc    : 0.072742s  0.048930s :    my_alloc (per thread)  
+malloc    : 0.053572s  0.026888s :    my_alloc (per thread)  
+malloc    : 0.034862s  0.056419s :    my_alloc (per thread)  
+malloc    : 0.052588s  0.059501s :    my_alloc (per thread)  
+malloc    : 0.041407s  0.055562s :    my_alloc (per thread)  
+malloc    : 0.053565s  0.053902s :    my_alloc (per thread)  
+malloc    : 0.054056s  0.030326s :    my_alloc (per thread)  
+malloc    : 0.053550s  0.055958s :    my_alloc (per thread)  
+malloc    : 0.057135s  0.053504s :    my_alloc (per thread)  
 ```
 
 ### 测试2(FIX_S + RAN)
@@ -80,50 +60,30 @@ my_alloc  : 0.111011s per thread
 #### 未开启的测试结果:
 
 ```text
-malloc    : 0.103177s per thread  
-my_alloc  : 0.115020s per thread  
-malloc    : 0.111065s per thread  
-my_alloc  : 0.114961s per thread  
-malloc    : 0.086289s per thread  
-my_alloc  : 0.113121s per thread  
-malloc    : 0.107226s per thread  
-my_alloc  : 0.133447s per thread  
-malloc    : 0.083772s per thread  
-my_alloc  : 0.128529s per thread  
-malloc    : 0.099683s per thread  
-my_alloc  : 0.116956s per thread  
-malloc    : 0.080511s per thread  
-my_alloc  : 0.115251s per thread  
-malloc    : 0.089994s per thread  
-my_alloc  : 0.109669s per thread  
-malloc    : 0.100411s per thread  
-my_alloc  : 0.133296s per thread  
-malloc    : 0.100331s per thread  
-my_alloc  : 0.119199s per thread  
+malloc    : 0.103177s  0.115020s :    my_alloc (per thread)  
+malloc    : 0.111065s  0.114961s :    my_alloc (per thread)  
+malloc    : 0.086289s  0.113121s :    my_alloc (per thread)  
+malloc    : 0.107226s  0.133447s :    my_alloc (per thread)  
+malloc    : 0.083772s  0.128529s :    my_alloc (per thread)  
+malloc    : 0.099683s  0.116956s :    my_alloc (per thread)  
+malloc    : 0.080511s  0.115251s :    my_alloc (per thread)  
+malloc    : 0.089994s  0.109669s :    my_alloc (per thread)  
+malloc    : 0.100411s  0.133296s :    my_alloc (per thread)  
+malloc    : 0.100331s  0.119199s :    my_alloc (per thread)  
 ```
 #### 开启后的测试结果:
 
 ```text
-malloc    : 0.103302s per thread  
-my_alloc  : 0.081456s per thread  
-malloc    : 0.087359s per thread  
-my_alloc  : 0.083306s per thread  
-malloc    : 0.100142s per thread  
-my_alloc  : 0.083267s per thread  
-malloc    : 0.104431s per thread  
-my_alloc  : 0.078098s per thread  
-malloc    : 0.106878s per thread  
-my_alloc  : 0.063637s per thread  
-malloc    : 0.084574s per thread  
-my_alloc  : 0.061239s per thread  
-malloc    : 0.084608s per thread  
-my_alloc  : 0.072779s per thread  
-malloc    : 0.112863s per thread  
-my_alloc  : 0.058177s per thread  
-malloc    : 0.080961s per thread  
-my_alloc  : 0.082806s per thread  
-malloc    : 0.107772s per thread  
-my_alloc  : 0.081457s per thread  
+malloc    : 0.103302s  0.081456s :    my_alloc (per thread)  
+malloc    : 0.087359s  0.083306s :    my_alloc (per thread)  
+malloc    : 0.100142s  0.083267s :    my_alloc (per thread)  
+malloc    : 0.104431s  0.078098s :    my_alloc (per thread)  
+malloc    : 0.106878s  0.063637s :    my_alloc (per thread)  
+malloc    : 0.084574s  0.061239s :    my_alloc (per thread)  
+malloc    : 0.084608s  0.072779s :    my_alloc (per thread)  
+malloc    : 0.112863s  0.058177s :    my_alloc (per thread)  
+malloc    : 0.080961s  0.082806s :    my_alloc (per thread)  
+malloc    : 0.107772s  0.081457s :    my_alloc (per thread)  
 ```
 
 ### 测试3(RAN_S + RAN)
@@ -131,50 +91,30 @@ my_alloc  : 0.081457s per thread
 #### 未开启的测试结果:
 
 ```text
-malloc    : 0.417778s per thread  
-my_alloc  : 0.294233s per thread  
-malloc    : 0.679326s per thread  
-my_alloc  : 0.349040s per thread  
-malloc    : 0.463199s per thread  
-my_alloc  : 0.208187s per thread  
-malloc    : 0.339218s per thread  
-my_alloc  : 0.203110s per thread  
-malloc    : 0.331969s per thread  
-my_alloc  : 0.209229s per thread  
-malloc    : 0.349963s per thread  
-my_alloc  : 0.231014s per thread  
-malloc    : 0.357440s per thread  
-my_alloc  : 0.232300s per thread  
-malloc    : 0.440766s per thread  
-my_alloc  : 0.183951s per thread  
-malloc    : 0.379994s per thread  
-my_alloc  : 0.244011s per thread  
-malloc    : 0.346965s per thread  
-my_alloc  : 0.202919s per thread  
+malloc    : 0.417778s  0.294233s :    my_alloc (per thread)  
+malloc    : 0.679326s  0.349040s :    my_alloc (per thread)  
+malloc    : 0.463199s  0.208187s :    my_alloc (per thread)  
+malloc    : 0.339218s  0.203110s :    my_alloc (per thread)  
+malloc    : 0.331969s  0.209229s :    my_alloc (per thread)  
+malloc    : 0.349963s  0.231014s :    my_alloc (per thread)  
+malloc    : 0.357440s  0.232300s :    my_alloc (per thread)  
+malloc    : 0.440766s  0.183951s :    my_alloc (per thread)  
+malloc    : 0.379994s  0.244011s :    my_alloc (per thread)  
+malloc    : 0.346965s  0.202919s :    my_alloc (per thread)  
 ```
 #### 开启后的测试结果:
 
 ```text
-malloc    : 0.376280s per thread  
-my_alloc  : 0.168575s per thread  
-malloc    : 0.379926s per thread  
-my_alloc  : 0.150780s per thread  
-malloc    : 0.416929s per thread  
-my_alloc  : 0.165615s per thread  
-malloc    : 0.359104s per thread  
-my_alloc  : 0.165632s per thread  
-malloc    : 0.394583s per thread  
-my_alloc  : 0.149274s per thread  
-malloc    : 0.423680s per thread  
-my_alloc  : 0.189218s per thread  
-malloc    : 0.385032s per thread  
-my_alloc  : 0.145840s per thread  
-malloc    : 0.376827s per thread  
-my_alloc  : 0.140085s per thread  
-malloc    : 0.344936s per thread  
-my_alloc  : 0.150629s per thread  
-malloc    : 0.395582s per thread  
-my_alloc  : 0.179485s per thread  
+malloc    : 0.376280s  0.168575s :    my_alloc (per thread)  
+malloc    : 0.379926s  0.150780s :    my_alloc (per thread)  
+malloc    : 0.416929s  0.165615s :    my_alloc (per thread)  
+malloc    : 0.359104s  0.165632s :    my_alloc (per thread)  
+malloc    : 0.394583s  0.149274s :    my_alloc (per thread)  
+malloc    : 0.423680s  0.189218s :    my_alloc (per thread)  
+malloc    : 0.385032s  0.145840s :    my_alloc (per thread)  
+malloc    : 0.376827s  0.140085s :    my_alloc (per thread)  
+malloc    : 0.344936s  0.150629s :    my_alloc (per thread)  
+malloc    : 0.395582s  0.179485s :    my_alloc (per thread)  
 ```
 
 ### 测试4(RAN_S + FULL)
@@ -182,51 +122,31 @@ my_alloc  : 0.179485s per thread
 #### 未开启的测试结果:
 
 ```text
-malloc    : 0.075693s per thread  
-my_alloc  : 0.185423s per thread  
-malloc    : 0.046012s per thread  
-my_alloc  : 0.127394s per thread  
-malloc    : 0.086556s per thread  
-my_alloc  : 0.123714s per thread  
-malloc    : 0.073384s per thread  
-my_alloc  : 0.114494s per thread  
-malloc    : 0.076661s per thread  
-my_alloc  : 0.101647s per thread  
-malloc    : 0.064412s per thread  
-my_alloc  : 0.113436s per thread  
-malloc    : 0.062730s per thread  
-my_alloc  : 0.103539s per thread  
-malloc    : 0.068836s per thread  
-my_alloc  : 0.125089s per thread  
-malloc    : 0.076099s per thread  
-my_alloc  : 0.118966s per thread  
-malloc    : 0.070389s per thread  
-my_alloc  : 0.168513s per thread  
+malloc    : 0.075693s  0.185423s :    my_alloc (per thread)  
+malloc    : 0.046012s  0.127394s :    my_alloc (per thread)  
+malloc    : 0.086556s  0.123714s :    my_alloc (per thread)  
+malloc    : 0.073384s  0.114494s :    my_alloc (per thread)  
+malloc    : 0.076661s  0.101647s :    my_alloc (per thread)  
+malloc    : 0.064412s  0.113436s :    my_alloc (per thread)  
+malloc    : 0.062730s  0.103539s :    my_alloc (per thread)  
+malloc    : 0.068836s  0.125089s :    my_alloc (per thread)  
+malloc    : 0.076099s  0.118966s :    my_alloc (per thread)  
+malloc    : 0.070389s  0.168513s :    my_alloc (per thread)  
 ```
 
 #### 开启后的测试结果:
 
 ```text
-malloc    : 0.057331s per thread  
-my_alloc  : 0.079922s per thread  
-malloc    : 0.059716s per thread  
-my_alloc  : 0.081361s per thread  
-malloc    : 0.073547s per thread  
-my_alloc  : 0.091318s per thread  
-malloc    : 0.055275s per thread  
-my_alloc  : 0.099439s per thread  
-malloc    : 0.074574s per thread  
-my_alloc  : 0.081602s per thread  
-malloc    : 0.069137s per thread  
-my_alloc  : 0.093499s per thread  
-malloc    : 0.079004s per thread  
-my_alloc  : 0.090813s per thread  
-malloc    : 0.074541s per thread  
-my_alloc  : 0.080820s per thread  
-malloc    : 0.083206s per thread  
-my_alloc  : 0.092401s per thread  
-malloc    : 0.077731s per thread  
-my_alloc  : 0.076239s per thread  
+malloc    : 0.057331s  0.079922s :    my_alloc (per thread)  
+malloc    : 0.059716s  0.081361s :    my_alloc (per thread)  
+malloc    : 0.073547s  0.091318s :    my_alloc (per thread)  
+malloc    : 0.055275s  0.099439s :    my_alloc (per thread)  
+malloc    : 0.074574s  0.081602s :    my_alloc (per thread)  
+malloc    : 0.069137s  0.093499s :    my_alloc (per thread)  
+malloc    : 0.079004s  0.090813s :    my_alloc (per thread)  
+malloc    : 0.074541s  0.080820s :    my_alloc (per thread)  
+malloc    : 0.083206s  0.092401s :    my_alloc (per thread)  
+malloc    : 0.077731s  0.076239s :    my_alloc (per thread)  
 ```
 
 ### 测试5(FIX_M + FULL)
@@ -234,51 +154,31 @@ my_alloc  : 0.076239s per thread
 #### 未开启的测试结果:
 
 ```text
-malloc    : 1.667380s per thread  
-my_alloc  : 0.093257s per thread  
-malloc    : 1.717308s per thread  
-my_alloc  : 0.101452s per thread  
-malloc    : 1.441534s per thread  
-my_alloc  : 0.075845s per thread  
-malloc    : 1.469260s per thread  
-my_alloc  : 0.079139s per thread  
-malloc    : 1.374004s per thread  
-my_alloc  : 0.097052s per thread  
-malloc    : 1.522090s per thread  
-my_alloc  : 0.095036s per thread  
-malloc    : 1.439549s per thread  
-my_alloc  : 0.076064s per thread  
-malloc    : 1.460276s per thread  
-my_alloc  : 0.068107s per thread  
-malloc    : 2.312381s per thread  
-my_alloc  : 0.175017s per thread  
-malloc    : 2.408959s per thread  
-my_alloc  : 0.182729s per thread  
+malloc    : 1.667380s  0.093257s :    my_alloc (per thread)  
+malloc    : 1.717308s  0.101452s :    my_alloc (per thread)  
+malloc    : 1.441534s  0.075845s :    my_alloc (per thread)  
+malloc    : 1.469260s  0.079139s :    my_alloc (per thread)  
+malloc    : 1.374004s  0.097052s :    my_alloc (per thread)  
+malloc    : 1.522090s  0.095036s :    my_alloc (per thread)  
+malloc    : 1.439549s  0.076064s :    my_alloc (per thread)  
+malloc    : 1.460276s  0.068107s :    my_alloc (per thread)  
+malloc    : 2.312381s  0.175017s :    my_alloc (per thread)  
+malloc    : 2.408959s  0.182729s :    my_alloc (per thread)  
 ```
 
 #### 开启后的测试结果:
 
 ```text
-malloc    : 1.329719s per thread  
-my_alloc  : 0.081163s per thread  
-malloc    : 1.327566s per thread  
-my_alloc  : 0.069114s per thread  
-malloc    : 1.307578s per thread  
-my_alloc  : 0.070208s per thread  
-malloc    : 1.327169s per thread  
-my_alloc  : 0.068355s per thread  
-malloc    : 1.305414s per thread  
-my_alloc  : 0.070756s per thread  
-malloc    : 1.267545s per thread  
-my_alloc  : 0.069703s per thread  
-malloc    : 1.256985s per thread  
-my_alloc  : 0.058201s per thread  
-malloc    : 1.285240s per thread  
-my_alloc  : 0.070153s per thread  
-malloc    : 1.252274s per thread  
-my_alloc  : 0.074049s per thread  
-malloc    : 1.261480s per thread  
-my_alloc  : 0.050988s per thread  
+malloc    : 1.329719s  0.081163s :    my_alloc (per thread)  
+malloc    : 1.327566s  0.069114s :    my_alloc (per thread)  
+malloc    : 1.307578s  0.070208s :    my_alloc (per thread)  
+malloc    : 1.327169s  0.068355s :    my_alloc (per thread)  
+malloc    : 1.305414s  0.070756s :    my_alloc (per thread)  
+malloc    : 1.267545s  0.069703s :    my_alloc (per thread)  
+malloc    : 1.256985s  0.058201s :    my_alloc (per thread)  
+malloc    : 1.285240s  0.070153s :    my_alloc (per thread)  
+malloc    : 1.252274s  0.074049s :    my_alloc (per thread)  
+malloc    : 1.261480s  0.050988s :    my_alloc (per thread)  
 ```
 
 由于差距过大, 使用`strace -c ./a.out 0`查看. 结果如下:

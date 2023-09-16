@@ -4,6 +4,9 @@
 #include "addr_convert.h"
 #include "bin.h"
 
+// 因为成员函数, run 要用到 bin. 因为是逻辑上的包含关系, bin 肯定要用到 run
+// 所以把 run.h和 run.cc 分开
+
 namespace myAlloc {
 
 static inline const BinInfo* bin_info_init() {

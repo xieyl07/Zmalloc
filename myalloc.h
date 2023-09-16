@@ -33,8 +33,9 @@ void myfree(void *ptr) {
         break;
     case SMALL_TYPE:
 //        tcache.free(ptr, page_i);
-        // 直接释放到 arena, 绕过 tcache.因为感觉浪费, 具体见Arena::bulk_free_small里面写的
+        // 直接释放到 arena, 绕过 tcache. 因为感觉浪费, 具体见Arena::bulk_free_small里面写的
         // 但是 gc 是不是要改改了, 多少次操作之后就分配或释放到标准线而不是释放3/4
+        // 但是 free 时绕过 tcache 影响分配 10 个再全部释放的性能, 缓冲池没有优势了
         chunk->arena->free_small(a2c(ptr), page_i);
         break;
     case UNALLOCATED_TYPE:

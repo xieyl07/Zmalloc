@@ -16,7 +16,7 @@ enum size_type{FIX_S, FIX_M, FIX_L, RAN_S, RAN_M};
 constexpr int thread_num = 1;
 constexpr int inner_loop = 1000;
 constexpr int outer_loop = 1000;
-constexpr size_type size_switch = FIX_M;
+constexpr size_type size_switch = FIX_S;
 constexpr bool enable_memset = true;
 constexpr release_type release_type_switch = FULL;
 

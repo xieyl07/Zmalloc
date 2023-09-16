@@ -131,6 +131,7 @@ class TCache : NoCopy {
     int event_cnt[NBINS]; // TCACHE_GC_INCR
     void *tbins[NBINS][TCACHED_MAX]; // bins 里的 bin 是一个指针数组
     int bin_pointer[NBINS]; // 指向非空的, 可以直接拿的
+    SpinLock locks[NBINS];
 };
 
 thread_local TCache tcache;

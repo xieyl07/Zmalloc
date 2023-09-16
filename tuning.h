@@ -47,6 +47,7 @@ constexpr int BITMAP_GROUPS_MAX = BITMAP_NUM_MAX / BITS_NUM;
 constexpr int SMALL_SIZE_MAX = small_size[NBINS - 1];
 constexpr int LARGE_SIZE_MAX = 1792 KiB; // < CHUNK_SIZE
 constexpr int TCACHED_MAX = 32; // tcache 里一个 bin 的容量
+constexpr int TCACHE_ALLOC_THRESHOLD = 4; // pointer < TCACHE_LOWWATER_SHIFT 时启动异步线程向 arena 申请内存
 constexpr int TCACHE_GC_INCR = 100; // 多少次事件(alloc, free)后 tcache 执行GC
 constexpr int CACHE_LINE_SIZE = 64;
 constexpr int CACHE_LINE_SHIFT = get_equal_shift(CACHE_LINE_SIZE);

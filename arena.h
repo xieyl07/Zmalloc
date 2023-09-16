@@ -84,26 +84,7 @@ class Arena : NoCopy {
     inline void* alloc(int size);
 
     inline char* alloc_small(int bin_id);
-    inline void bulk_alloc_small(int bin_id, void **target, int num) {
-        Bin *bin = bins + bin_id;
-        int r_size = (bin_info + bin_id)->region_size;
-        bin->lock.lock();
-
-        while (num > 0) {
-            RunInfo *run_i = get_run_i(bin_id, num);
-            int tmp = run_i->get_nregion_id(target, num);
-            char *run = run_i_to_page(a2c(run_i));
-
-            // filling
-            for (int i = 0; i < tmp; ++i) {
-                target[i] = run + r_size * (int)(long)target[i];
-            }
-            target += tmp;
-            num -= tmp;
-        }
-
-        bin->lock.unlock();
-    }
+    inline void bulk_alloc_small(int bin_id, void **target, int num);
     inline void* alloc_large(int size);
     inline void* alloc_huge(int size);
 
@@ -365,6 +346,27 @@ RunInfo* Arena::get_run(int bin_id) {
     PageInfo *page_i = get_npage(page_num);
     init_small(page_i, page_num, bin_id);
     return (RunInfo*)(a2c(page_i) + RUNINFO_OFFSET);
+}
+
+void Arena::bulk_alloc_small(int bin_id, void **target, int num) {
+    Bin *bin = bins + bin_id;
+    int r_size = (bin_info + bin_id)->region_size;
+    bin->lock.lock();
+
+    while (num > 0) {
+        RunInfo *run_i = get_run_i(bin_id, num);
+        int tmp = run_i->get_nregion_id(target, num);
+        char *run = run_i_to_page(a2c(run_i));
+
+        // filling
+        for (int i = 0; i < tmp; ++i) {
+            target[i] = run + r_size * (int)(long)target[i];
+        }
+        target += tmp;
+        num -= tmp;
+    }
+
+    bin->lock.unlock();
 }
 
 
